@@ -3,11 +3,13 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 function Library() {
   const [filter, setFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
 
   // Temporary library data (we can connect to Firebase later)
   const libraryItems = [
@@ -55,9 +57,9 @@ function Library() {
     },
   ];
 
-  const filteredItems = filter === "All" 
-    ? libraryItems 
-    : libraryItems.filter(item => item.type === filter);
+  const filteredItems = filter === "All"
+    ? libraryItems
+    : libraryItems.filter((item) => item.type === filter);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -68,56 +70,79 @@ function Library() {
   }, [navigate]);
 
   if (loading) {
-    return <div style={{ textAlign: "center", marginTop: "100px" }}>Loading library...</div>;
+    return (
+      <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <Sidebar />
+        <main className="flex-1 ml-0 md:ml-64 flex items-center justify-center">
+          <p className={darkMode ? "text-gray-300" : "text-gray-600"}>Loading library...</p>
+        </main>
+      </div>
+    );
   }
 
+  const badgeColor = (type) =>
+    type === "Audio Book" ? "bg-violet-600" : type === "Past Questions" ? "bg-orange-500" : "bg-green-700";
+
   return (
-    <div style={styles.container}>
+    <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main style={styles.main}>
-        <h1 style={styles.title}>📖 E-Library</h1>
-        <p style={styles.subtitle}>Access textbooks, audio lessons and past questions</p>
+      <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8">
+        <h1 className={`text-2xl md:text-3xl font-bold mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+          📖 E-Library
+        </h1>
+        <p className={`mb-6 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          Access textbooks, audio lessons and past questions
+        </p>
 
         {/* Filter Buttons */}
-        <div style={styles.filterBar}>
-          {["All", "Textbook", "Audio Book", "Past Questions"].map((item) => (
-            <button
-              key={item}
-              onClick={() => setFilter(item)}
-              style={{
-                ...styles.filterBtn,
-                ...(filter === item ? styles.activeFilter : {})
-              }}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="flex gap-2.5 mb-6 flex-wrap">
+          {["All", "Textbook", "Audio Book", "Past Questions"].map((item) => {
+            const isActive = filter === item;
+            return (
+              <button
+                key={item}
+                onClick={() => setFilter(item)}
+                className={`px-4 py-2.5 rounded-full text-sm font-medium border transition ${
+                  isActive
+                    ? "bg-green-700 text-white border-green-700"
+                    : darkMode
+                    ? "bg-gray-800 text-gray-300 border-gray-700 hover:border-gray-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
         </div>
 
         {/* Library Grid */}
-        <div style={styles.grid}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredItems.length === 0 ? (
-            <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#999", padding: "40px" }}>
+            <p className={`col-span-full text-center py-10 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
               No materials found.
             </p>
           ) : (
             filteredItems.map((book) => (
-              <div key={book.id} style={styles.card}>
-                <div style={{
-                  ...styles.typeBadge,
-                  background: book.type === "Audio Book" ? "#6c5ce7" : 
-                              book.type === "Past Questions" ? "#e67e22" : "#008751"
-                }}>
+              <div
+                key={book.id}
+                className={`rounded-2xl p-5 shadow-sm flex flex-col ${darkMode ? "bg-gray-800" : "bg-white"}`}
+              >
+                <div className={`inline-block w-fit text-white text-[11px] font-bold uppercase px-2.5 py-1 rounded-full mb-3 ${badgeColor(book.type)}`}>
                   {book.type}
                 </div>
-                <h3 style={styles.cardTitle}>{book.title}</h3>
-                <p style={styles.cardDesc}>{book.desc}</p>
-                <a 
-                  href={book.url} 
-                  target="_blank" 
+                <h3 className={`text-[17px] font-semibold leading-snug mb-2.5 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                  {book.title}
+                </h3>
+                <p className={`text-sm leading-relaxed flex-1 mb-4 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                  {book.desc}
+                </p>
+                <a
+                  href={book.url}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  style={styles.openBtn}
+                  className="text-center py-2.5 rounded-lg font-semibold text-sm bg-green-700 text-white hover:bg-green-800 transition"
                 >
                   {book.type === "Audio Book" ? "🎧 Listen Now" : "📖 Open Material"}
                 </a>
@@ -129,93 +154,5 @@ function Library() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#f4f7f6",
-  },
-  main: {
-    marginLeft: "260px",
-    flex: 1,
-    padding: "25px 30px",
-  },
-  title: {
-    margin: "0 0 6px",
-    fontSize: "26px",
-  },
-  subtitle: {
-    color: "#777",
-    marginBottom: "25px",
-  },
-  filterBar: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "25px",
-    flexWrap: "wrap",
-  },
-  filterBtn: {
-    padding: "9px 18px",
-    borderRadius: "20px",
-    border: "1px solid #ddd",
-    background: "white",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "500",
-  },
-  activeFilter: {
-    background: "#008751",
-    color: "white",
-    borderColor: "#008751",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "20px",
-  },
-  card: {
-    background: "white",
-    padding: "22px",
-    borderRadius: "12px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-    display: "flex",
-    flexDirection: "column",
-  },
-  typeBadge: {
-    display: "inline-block",
-    color: "white",
-    fontSize: "11px",
-    fontWeight: "bold",
-    padding: "4px 10px",
-    borderRadius: "20px",
-    marginBottom: "12px",
-    width: "fit-content",
-    textTransform: "uppercase",
-  },
-  cardTitle: {
-    margin: "0 0 10px",
-    fontSize: "17px",
-    lineHeight: "1.3",
-  },
-  cardDesc: {
-    color: "#666",
-    fontSize: "14px",
-    lineHeight: "1.5",
-    flex: 1,
-    marginBottom: "18px",
-  },
-  openBtn: {
-    display: "inline-block",
-    textAlign: "center",
-    padding: "11px",
-    background: "#008751",
-    color: "white",
-    textDecoration: "none",
-    borderRadius: "8px",
-    fontWeight: "600",
-    fontSize: "14px",
-  },
-};
 
 export default Library;

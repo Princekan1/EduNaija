@@ -7,6 +7,7 @@ import AITutor from "./pages/AITutor";
 import Library from "./pages/Library";
 import Leaderboard from "./pages/Leaderboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -49,6 +50,12 @@ function App() {
         <Route path="/leaderboard" element={
           <ProtectedRoute>
             <Leaderboard />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         } />
       </Routes>

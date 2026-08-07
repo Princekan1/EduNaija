@@ -1,132 +1,208 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { collection, getDocs, setDoc, doc } from "firebase/firestore";
+import { auth, db, aiModel } from "../firebase";
 import Sidebar from "../components/Layout/Sidebar";
+import { useTheme } from "../context/ThemeContext";
 
 function Topics() {
   const { subjectId } = useParams();
+  const [searchParams] = useSearchParams();
+  const classLevel = searchParams.get("class") || "";
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const { darkMode } = useTheme();
 
-  // Modal states
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [currentNote, setCurrentNote] = useState({ title: "", content: "" });
-  const [showVideo, setShowVideo] = useState(null); // stores topic id
+  const [topics, setTopics] = useState([]);
+  const [subjectName, setSubjectName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  // Media states
+  const [showVideo, setShowVideo] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
 
-  // Temporary topics data
-  const topicsData = {
-    mathematics: [
-      { 
-        id: 1, 
-        title: "Number Bases", 
-        description: "Conversion between binary, decimal, octal and hexadecimal",
-        note: "Number bases are systems of counting. The most common is Base 10 (Decimal). Computers use Base 2 (Binary). Other important ones are Base 8 (Octal) and Base 16 (Hexadecimal).\n\nTo convert from Binary to Decimal, multiply each digit by powers of 2.",
-        video: "https://www.youtube.com/embed/rA2u6o_5b5M",
-        audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-      },
-      { 
-        id: 2, 
-        title: "Algebraic Processes", 
-        description: "Simplification and factorization of algebraic expressions",
-        note: "Algebraic processes involve simplifying expressions and solving equations. Always collect like terms and follow BODMAS rule.",
-        video: "https://www.youtube.com/embed/3nhn3Yq2q3Y",
-        audio: null
-      },
-      { 
-        id: 3, 
-        title: "Quadratic Equations", 
-        description: "Solving quadratic equations using different methods",
-        note: "A quadratic equation is of the form ax² + bx + c = 0. You can solve it by factorization, completing the square, or using the quadratic formula.",
-        video: null,
-        audio: null
-      },
-    ],
-    english: [
-      { 
-        id: 1, 
-        title: "Comprehension", 
-        description: "Reading and understanding passages",
-        note: "Comprehension means understanding what you read. Always identify the main idea, supporting details, and the writer's intention.",
-        video: null,
-        audio: null
-      },
-      { 
-        id: 2, 
-        title: "Essay Writing", 
-        description: "Narrative, descriptive and argumentative essays",
-        note: "Good essays have introduction, body paragraphs, and conclusion. Always plan before you write.",
-        video: null,
-        audio: null
-      },
-    ],
-    physics: [
-      { 
-        id: 1, 
-        title: "Measurements & Units", 
-        description: "Fundamental and derived quantities",
-        note: "Fundamental quantities include Length, Mass, and Time. Derived quantities are calculated from fundamental ones (e.g. Speed = Distance/Time).",
-        video: null,
-        audio: null
-      },
-    ],
-    chemistry: [
-      { 
-        id: 1, 
-        title: "Particulate Nature of Matter", 
-        description: "Atoms, molecules and ions",
-        note: "All matter is made up of tiny particles called atoms. Atoms can combine to form molecules.",
-        video: null,
-        audio: null
-      },
-    ],
-    biology: [
-      { 
-        id: 1, 
-        title: "Cell Structure", 
-        description: "Plant and animal cells",
-        note: "The cell is the basic unit of life. Plant cells have cell wall and chloroplasts, while animal cells do not.",
-        video: null,
-        audio: null
-      },
-    ],
-    civic: [
-      { 
-        id: 1, 
-        title: "Citizenship", 
-        description: "Rights and duties of a citizen",
-        note: "A citizen has rights (e.g. right to education, freedom of speech) and duties (e.g. paying tax, obeying laws).",
-        video: null,
-        audio: null
-      },
-    ],
-  };
-
-  const subjectNames = {
-    mathematics: "Mathematics",
-    english: "English Language",
-    physics: "Physics",
-    chemistry: "Chemistry",
-    biology: "Biology",
-    civic: "Civic Education",
-  };
-
-  const topics = topicsData[subjectId] || [];
-  const subjectName = subjectNames[subjectId] || "Subject";
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) navigate("/");
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [navigate]);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        navigate("/");
+        return;
+      }
 
-  // Handlers
-  const openNote = (topic) => {
-    setCurrentNote({ title: topic.title, content: topic.note || "No note available for this topic yet." });
-    setShowNoteModal(true);
+      if (!classLevel) {
+        navigate("/dashboard");
+        return;
+      }
+
+      await loadTopics();
+    });
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjectId, classLevel, navigate]);
+
+  const loadTopics = async () => {
+    try {
+      const subjectSnap = await getDocs(collection(db, "curriculum", classLevel, "subjects"));
+      const subject = subjectSnap.docs.find((d) => d.id === subjectId);
+      if (subject) {
+        setSubjectName(subject.data().name);
+      }
+
+      const topicsRef = collection(db, "curriculum", classLevel, "subjects", subjectId, "topics");
+      const snapshot = await getDocs(topicsRef);
+
+      if (!snapshot.empty) {
+        const loaded = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        loaded.sort((a, b) => (a.order || 0) - (b.order || 0));
+        setTopics(loaded);
+        setLoading(false);
+      } else {
+        await generateTopics();
+      }
+    } catch (error) {
+      console.error("Error loading topics:", error);
+      setLoading(false);
+    }
+  };
+
+  const generateTopics = async () => {
+    setGenerating(true);
+    try {
+      const prompt = `
+You are an expert in the Nigerian education curriculum (NERDC).
+Generate 8 to 12 important topics for the subject "${subjectName || subjectId}" for ${classLevel} students in Nigeria.
+Return ONLY a valid JSON array like this example:
+[
+  {
+    "id": "topic-1",
+    "title": "Introduction to Numbers",
+    "description": "Understanding counting and basic number concepts"
+  }
+]
+Do not add any extra text, markdown or explanation. Only return pure JSON.
+`;
+
+      const result = await aiModel.generateContent(prompt);
+      let text = result.response.text().trim();
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      const generated = JSON.parse(text);
+
+      const savedTopics = [];
+      for (let i = 0; i < generated.length; i++) {
+        const topic = generated[i];
+        const topicData = {
+          title: topic.title,
+          description: topic.description,
+          order: i + 1,
+          video: null,
+          audio: null,
+          lesson: null, // generated on demand the first time a student opens it
+        };
+
+        await setDoc(
+          doc(db, "curriculum", classLevel, "subjects", subjectId, "topics", topic.id || `topic-${i + 1}`),
+          topicData
+        );
+
+        savedTopics.push({ id: topic.id || `topic-${i + 1}`, ...topicData });
+      }
+
+      setTopics(savedTopics);
+    } catch (error) {
+      console.error("AI topic generation error:", error);
+      alert("Failed to generate topics. Please try again.");
+    } finally {
+      setGenerating(false);
+      setLoading(false);
+    }
+  };
+
+  const [showLessonModal, setShowLessonModal] = useState(false);
+  const [activeLesson, setActiveLesson] = useState(null); // { title, objectives, keyTerms, sections, checkYourUnderstanding, summary }
+  const [lessonLoadingFor, setLessonLoadingFor] = useState(null); // topic.id currently generating
+  const [lessonError, setLessonError] = useState("");
+
+  // Guides how the AI adjusts vocabulary and complexity for the lesson.
+  const readingLevelGuidance = (level) => {
+    if (level.startsWith("Primary")) {
+      return "Write for a young child. Use very short sentences, everyday words, and simple everyday Nigerian examples (market, home, school, family). Avoid technical jargon entirely — explain any unavoidable term in plain words the moment it's used.";
+    }
+    if (level.startsWith("JSS")) {
+      return "Write for a young teenager building subject vocabulary for the first time. Use clear, moderately short sentences. Introduce technical terms deliberately and define each one plainly the first time it appears. Use relatable Nigerian examples (local context, familiar situations).";
+    }
+    return "Write for a student preparing for WAEC/NECO/JAMB. Use precise, exam-appropriate technical language, but still explain new terms clearly rather than assuming prior mastery. Examples can be more abstract or exam-style where appropriate.";
+  };
+
+  const openLesson = async (topic) => {
+    setLessonError("");
+
+    // Already generated and cached — just show it, no AI call needed.
+    if (topic.lesson) {
+      setActiveLesson({ title: topic.title, ...topic.lesson });
+      setShowLessonModal(true);
+      return;
+    }
+
+    setLessonLoadingFor(topic.id);
+    setShowLessonModal(true);
+
+    try {
+      const prompt = `
+You are an expert Nigerian curriculum textbook author (NERDC), writing with the clarity and structure of a well-regarded textbook series like Prentice Hall Science Explorer: clear learning objectives, defined vocabulary, an explanation built section by section, checkpoint questions to test understanding, and a closing summary.
+
+Subject: ${subjectName || subjectId}
+Topic: ${topic.title} — ${topic.description}
+Student's class level: ${classLevel}
+
+${readingLevelGuidance(classLevel)}
+
+Write a complete lesson for this topic. Use real-world Nigerian examples and context where they help understanding. Return ONLY valid JSON in exactly this shape, with no markdown fences and no extra text:
+
+{
+  "objectives": ["2 to 4 short 'By the end of this lesson, you will be able to...' statements"],
+  "keyTerms": [{"term": "...", "definition": "..."}],
+  "sections": [{"heading": "...", "content": "..."}],
+  "checkYourUnderstanding": [{"question": "...", "answer": "..."}],
+  "summary": "A short 2-3 sentence wrap-up of the whole topic"
+}
+
+Rules:
+- 3 to 5 sections, each building on the last, each 2 to 4 sentences.
+- 3 to 6 key terms, only ones actually used in the sections.
+- 2 to 3 check-your-understanding questions with clear answers.
+- Match the vocabulary and sentence complexity to the class level instructions above.
+`;
+
+      const result = await aiModel.generateContent(prompt);
+      let text = result.response.text().trim();
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      const lesson = JSON.parse(text);
+
+      // Cache it so this exact topic never needs to be regenerated again.
+      await setDoc(
+        doc(db, "curriculum", classLevel, "subjects", subjectId, "topics", topic.id),
+        { lesson },
+        { merge: true }
+      );
+
+      setTopics((prev) => prev.map((t) => (t.id === topic.id ? { ...t, lesson } : t)));
+      setActiveLesson({ title: topic.title, ...lesson });
+    } catch (error) {
+      console.error("Lesson generation error:", error);
+      setLessonError(
+        error?.message?.includes("429") || error?.message?.includes("quota")
+          ? "The AI has hit its usage limit for now. Please try again shortly."
+          : "Couldn't generate this lesson. Please try again."
+      );
+    } finally {
+      setLessonLoadingFor(null);
+    }
   };
 
   const openVideo = (topic) => {
@@ -145,78 +221,256 @@ function Topics() {
     setAudioUrl(topic.audio);
   };
 
-const startPractice = (topic) => {
-  navigate("/quiz", {
-    state: {
-      topicTitle: topic.title,
-      // You can pass real questions later
-    }
-  });
-};
+  const startPractice = (topic) => {
+    navigate("/quiz", {
+      state: { topicTitle: topic.title },
+    });
+  };
 
-  if (loading) {
-    return <div style={{ textAlign: "center", marginTop: "100px" }}>Loading topics...</div>;
+  if (loading || generating) {
+    return (
+      <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <Sidebar />
+        <main className="flex-1 ml-0 md:ml-64 flex items-center justify-center p-6">
+          <p className={`text-lg font-medium ${darkMode ? "text-green-400" : "text-green-700"}`}>
+            {generating
+              ? `AI is generating topics for ${subjectName || subjectId} (${classLevel})...`
+              : "Loading topics..."}
+          </p>
+        </main>
+      </div>
+    );
   }
 
   return (
-    <div style={styles.container}>
+    <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main style={styles.main}>
-        <button style={styles.backBtn} onClick={() => navigate("/dashboard")}>
+      <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className={`text-sm font-medium mb-4 hover:underline ${
+            darkMode ? "text-green-400" : "text-green-700"
+          }`}
+        >
           ← Back to Subjects
         </button>
 
-        <h1 style={styles.title}>{subjectName}</h1>
-        <p style={styles.subtitle}>Select a topic to start learning</p>
+        <h1 className={`text-2xl md:text-3xl font-bold mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+          {subjectName || subjectId}
+        </h1>
+        <p className={`mb-6 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          {classLevel} • Select a topic to start learning
+        </p>
 
-        <div style={styles.topicsList}>
-          {topics.map((topic) => (
-            <div key={topic.id} style={styles.topicCard}>
-              <div>
-                <h3 style={styles.topicTitle}>{topic.title}</h3>
-                <p style={styles.topicDesc}>{topic.description}</p>
-              </div>
-
-              <div style={styles.actions}>
-                <button style={{ ...styles.btn, ...styles.btnRead }} onClick={() => openNote(topic)}>
-                  📖 Read Note
-                </button>
-                <button style={{ ...styles.btn, ...styles.btnWatch }} onClick={() => openVideo(topic)}>
-                  ▶️ Watch Video
-                </button>
-                <button style={{ ...styles.btn, ...styles.btnAudio }} onClick={() => playAudio(topic)}>
-                  🎧 Listen Audio
-                </button>
-                <button style={{ ...styles.btn, ...styles.btnPractice }} onClick={() => startPractice(topic)}>
-                  ✍️ Practice
-                </button>
-              </div>
-
-              {/* Video Player */}
-              {showVideo === topic.id && topic.video && (
-                <div style={styles.videoContainer}>
-                  <iframe
-                    src={topic.video}
-                    title={topic.title}
-                    style={styles.iframe}
-                    allowFullScreen
-                  ></iframe>
+        <div className="flex flex-col gap-4">
+          {topics.length === 0 ? (
+            <p className={darkMode ? "text-gray-400" : "text-gray-500"}>No topics available yet.</p>
+          ) : (
+            topics.map((topic) => (
+              <div
+                key={topic.id}
+                className={`rounded-2xl p-5 md:p-6 shadow-sm border-l-4 border-green-700 ${
+                  darkMode ? "bg-gray-800" : "bg-white"
+                }`}
+              >
+                <div>
+                  <h3 className={`text-lg font-semibold mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                    {topic.title}
+                  </h3>
+                  <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                    {topic.description}
+                  </p>
                 </div>
-              )}
-            </div>
-          ))}
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <button
+                    onClick={() => openLesson(topic)}
+                    disabled={lessonLoadingFor === topic.id}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-700 text-white hover:bg-green-800 transition disabled:opacity-60"
+                  >
+                    {lessonLoadingFor === topic.id ? "Preparing lesson…" : "📖 Learn This Topic"}
+                  </button>
+                  <button
+                    onClick={() => openVideo(topic)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-yellow-400 text-gray-900 hover:bg-yellow-500 transition"
+                  >
+                    ▶️ Watch Video
+                  </button>
+                  <button
+                    onClick={() => playAudio(topic)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                      darkMode
+                        ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                        : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                    }`}
+                  >
+                    🎧 Listen Audio
+                  </button>
+                  <button
+                    onClick={() => startPractice(topic)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition"
+                  >
+                    ✍️ Practice
+                  </button>
+                </div>
+
+                {showVideo === topic.id && topic.video && (
+                  <div className="mt-4 rounded-lg overflow-hidden bg-black">
+                    <iframe
+                      src={topic.video}
+                      title={topic.title}
+                      className="w-full h-[340px] border-0"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </main>
 
-      {/* Note Modal */}
-      {showNoteModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <button style={styles.closeBtn} onClick={() => setShowNoteModal(false)}>×</button>
-            <h2 style={{ color: "#008751", marginBottom: "15px" }}>{currentNote.title}</h2>
-            <div style={{ lineHeight: "1.7", whiteSpace: "pre-wrap" }}>
-              {currentNote.content}
+      {/* Lesson Modal */}
+      {showLessonModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4 md:p-5"
+          onClick={() => setShowLessonModal(false)}
+        >
+          <div
+            className={`rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto relative ${
+              darkMode ? "bg-gray-800" : "bg-white"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowLessonModal(false)}
+              className="absolute top-4 right-5 w-8 h-8 rounded-full bg-red-500 text-white text-lg leading-none flex items-center justify-center hover:bg-red-600 z-10"
+            >
+              ×
+            </button>
+
+            <div className="p-6 md:p-8">
+              {lessonLoadingFor && !activeLesson ? (
+                <div className="py-16 text-center">
+                  <p className={`font-medium ${darkMode ? "text-green-400" : "text-green-700"}`}>
+                    Preparing your lesson on "{topics.find((t) => t.id === lessonLoadingFor)?.title}"…
+                  </p>
+                  <p className={`text-sm mt-2 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                    Levelled for {classLevel} — this only takes a moment.
+                  </p>
+                </div>
+              ) : lessonError ? (
+                <div className="py-10 text-center">
+                  <p className="text-red-500 font-medium mb-4">{lessonError}</p>
+                  <button
+                    onClick={() => setShowLessonModal(false)}
+                    className="px-5 py-2.5 rounded-lg font-semibold text-sm bg-gray-500 text-white hover:bg-gray-600 transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : activeLesson ? (
+                <>
+                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${darkMode ? "text-green-400" : "text-green-700"}`}>
+                    {subjectName} • {classLevel}
+                  </p>
+                  <h2 className={`text-2xl font-bold mb-5 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                    {activeLesson.title}
+                  </h2>
+
+                  {/* Objectives */}
+                  {activeLesson.objectives?.length > 0 && (
+                    <div className={`rounded-xl p-4 mb-5 ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+                      <h3 className={`text-sm font-bold uppercase tracking-wide mb-2 ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                        Learning Objectives
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {activeLesson.objectives.map((obj, i) => (
+                          <li key={i} className={`text-sm flex gap-2 ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                            <span className={darkMode ? "text-green-400" : "text-green-700"}>✓</span>
+                            {obj}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Key Terms */}
+                  {activeLesson.keyTerms?.length > 0 && (
+                    <div className={`rounded-xl p-4 mb-5 border-l-4 border-blue-500 ${
+                      darkMode ? "bg-blue-500/10" : "bg-blue-50"
+                    }`}>
+                      <h3 className={`text-sm font-bold uppercase tracking-wide mb-2 ${darkMode ? "text-blue-300" : "text-blue-800"}`}>
+                        Key Vocabulary
+                      </h3>
+                      <dl className="space-y-2">
+                        {activeLesson.keyTerms.map((kt, i) => (
+                          <div key={i} className="text-sm">
+                            <dt className={`font-semibold inline ${darkMode ? "text-white" : "text-gray-900"}`}>
+                              {kt.term}:{" "}
+                            </dt>
+                            <dd className={`inline ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                              {kt.definition}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+
+                  {/* Sections */}
+                  <div className="space-y-5 mb-5">
+                    {activeLesson.sections?.map((sec, i) => (
+                      <div key={i}>
+                        <h3 className={`font-bold mb-1.5 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                          {sec.heading}
+                        </h3>
+                        <p className={`text-sm leading-relaxed ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                          {sec.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Check Your Understanding */}
+                  {activeLesson.checkYourUnderstanding?.length > 0 && (
+                    <div className={`rounded-xl p-4 mb-5 border-l-4 border-amber-500 ${
+                      darkMode ? "bg-amber-500/10" : "bg-amber-50"
+                    }`}>
+                      <h3 className={`text-sm font-bold uppercase tracking-wide mb-3 ${darkMode ? "text-amber-300" : "text-amber-800"}`}>
+                        Check Your Understanding
+                      </h3>
+                      <div className="space-y-3">
+                        {activeLesson.checkYourUnderstanding.map((qa, i) => (
+                          <details key={i} className="text-sm">
+                            <summary className={`font-medium cursor-pointer ${darkMode ? "text-gray-100" : "text-gray-900"}`}>
+                              {i + 1}. {qa.question}
+                            </summary>
+                            <p className={`mt-1.5 pl-4 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                              {qa.answer}
+                            </p>
+                          </details>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Summary */}
+                  {activeLesson.summary && (
+                    <div className={`rounded-xl p-4 border-l-4 border-green-700 ${
+                      darkMode ? "bg-green-500/10" : "bg-green-50"
+                    }`}>
+                      <h3 className={`text-sm font-bold uppercase tracking-wide mb-1.5 ${darkMode ? "text-green-300" : "text-green-800"}`}>
+                        Summary
+                      </h3>
+                      <p className={`text-sm leading-relaxed ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+                        {activeLesson.summary}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : null}
             </div>
           </div>
         </div>
@@ -224,151 +478,22 @@ const startPractice = (topic) => {
 
       {/* Audio Player */}
       {audioUrl && (
-        <div style={styles.audioPlayer}>
-          <button style={styles.audioClose} onClick={() => setAudioUrl(null)}>×</button>
-          <audio src={audioUrl} controls autoPlay style={{ flex: 1 }} />
+        <div
+          className={`fixed bottom-0 left-0 w-full p-4 flex items-center gap-4 border-t-4 border-green-700 shadow-lg z-[1000] ${
+            darkMode ? "bg-gray-800" : "bg-white"
+          }`}
+        >
+          <button
+            onClick={() => setAudioUrl(null)}
+            className="w-9 h-9 rounded-full bg-red-500 text-white text-lg flex items-center justify-center hover:bg-red-600 shrink-0"
+          >
+            ×
+          </button>
+          <audio src={audioUrl} controls autoPlay className="flex-1" />
         </div>
       )}
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#f4f7f6",
-  },
-  main: {
-    marginLeft: "260px",
-    flex: 1,
-    padding: "25px 30px",
-  },
-  backBtn: {
-    background: "none",
-    border: "none",
-    color: "#008751",
-    fontSize: "15px",
-    cursor: "pointer",
-    marginBottom: "15px",
-    fontWeight: "500",
-  },
-  title: {
-    margin: "0 0 6px",
-    fontSize: "28px",
-    color: "#222",
-  },
-  subtitle: {
-    color: "#777",
-    marginBottom: "25px",
-  },
-  topicsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  topicCard: {
-    background: "white",
-    padding: "22px",
-    borderRadius: "12px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-    borderLeft: "5px solid #008751",
-  },
-  topicTitle: {
-    margin: "0 0 6px",
-    fontSize: "18px",
-  },
-  topicDesc: {
-    margin: 0,
-    color: "#666",
-    fontSize: "14px",
-  },
-  actions: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "16px",
-    flexWrap: "wrap",
-  },
-  btn: {
-    padding: "9px 14px",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "600",
-  },
-  btnRead: { background: "#008751", color: "white" },
-  btnWatch: { background: "#FFD700", color: "#333" },
-  btnAudio: { background: "#f0f0f0", color: "#333" },
-  btnPractice: { background: "#6c5ce7", color: "white" },
-  videoContainer: {
-    marginTop: "15px",
-    borderRadius: "8px",
-    overflow: "hidden",
-    background: "#000",
-  },
-  iframe: {
-    width: "100%",
-    height: "340px",
-    border: "none",
-  },
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.7)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: "20px",
-  },
-  modalContent: {
-    background: "white",
-    padding: "30px",
-    borderRadius: "12px",
-    maxWidth: "700px",
-    width: "100%",
-    maxHeight: "80vh",
-    overflowY: "auto",
-    position: "relative",
-  },
-  closeBtn: {
-    position: "absolute",
-    top: "15px",
-    right: "20px",
-    background: "#e74c3c",
-    color: "white",
-    border: "none",
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    fontSize: "20px",
-    cursor: "pointer",
-  },
-  audioPlayer: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    width: "100%",
-    background: "white",
-    padding: "15px 20px",
-    boxShadow: "0 -4px 12px rgba(0,0,0,0.1)",
-    display: "flex",
-    alignItems: "center",
-    gap: "15px",
-    zIndex: 1000,
-    borderTop: "3px solid #008751",
-  },
-  audioClose: {
-    background: "#e74c3c",
-    color: "white",
-    border: "none",
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    fontSize: "18px",
-    cursor: "pointer",
-  },
-};
 
 export default Topics;

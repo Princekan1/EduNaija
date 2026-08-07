@@ -5,11 +5,11 @@ import { getFunctions } from "firebase/functions";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAYHK0QpOP2CksizSWSUkhkjeQXj-YaUCY",
-  authDomain: "edunaija-633e8.firebaseapp.com",
-  projectId: "edunaija-633e8",
-  storageBucket: "edunaija-633e8.firebasestorage.app",
-  appId: "1:571080271020:web:689c3aff1cbca99e1d2b09"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

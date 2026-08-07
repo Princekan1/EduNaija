@@ -8,6 +8,7 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -84,30 +85,39 @@ function Auth() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>🇳🇬 EduNaija</h1>
-        <p style={styles.subtitle}>
-          {isLogin ? "Log in to continue your learning journey" : "Create your account"}
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-700 to-emerald-500 p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-green-700">🇳🇬 EduNaija</h1>
+          <p className="text-gray-500 mt-2 text-sm">
+            {isLogin ? "Log in to continue your learning journey" : "Create your account"}
+          </p>
+        </div>
 
-        <button style={styles.googleBtn} onClick={handleGoogleSignIn} disabled={loading}>
+        {/* Google Button */}
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl py-3 font-medium hover:bg-gray-50 transition disabled:opacity-60"
+        >
           <img 
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
             alt="Google" 
-            width="18" 
-            style={{ marginRight: 8 }}
+            className="w-5 h-5"
           />
           Continue with Google
         </button>
 
-        <div style={styles.divider}>
-          <div style={styles.line}></div>
-          <span style={{ padding: "0 10px", color: "#999", fontSize: "13px" }}>OR</span>
-          <div style={styles.line}></div>
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="px-4 text-sm text-gray-400">OR</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <input
               type="text"
@@ -115,7 +125,7 @@ function Auth() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              style={styles.input}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
             />
           )}
 
@@ -125,172 +135,87 @@ function Auth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={styles.input}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
           />
 
-          {/* Password Field with Show/Hide */}
-          <div style={styles.passwordContainer}>
+          {/* Password */}
+          <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={styles.input}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
             />
-            <span 
-              style={styles.eyeIcon}
-              onClick={() => setShowPassword(!showPassword)}
+            <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-700 transition-colors duration-200"
+            aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? "🙈" : "👁️"}
-            </span>
+              {showPassword ? (
+                <EyeOff size={20} />
+              ) : (
+              <Eye size={20} />
+              )}
+            </button>
           </div>
 
-          {/* Confirm Password Field (only on signup) */}
+          {/* Confirm Password */}
           {!isLogin && (
-            <div style={styles.passwordContainer}>
+            <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                style={styles.input}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
               />
-              <span 
-                style={styles.eyeIcon}
+              <button
+                type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-700 transition-colors"
               >
-                {showConfirmPassword ? "🙈" : "👁️"}
-              </span>
+                {showConfirmPassword ? (
+                  <EyeOff size={20} />
+                ) : (
+                  <Eye size={20} />
+                )}
+              </button>
             </div>
           )}
 
-          {error && <p style={styles.error}>{error}</p>}
+          {error && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
 
-          <button type="submit" style={styles.submitBtn} disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-green-700 text-white py-3.5 rounded-xl font-semibold hover:bg-green-800 transition disabled:opacity-60"
+          >
             {loading ? "Please wait..." : isLogin ? "Login" : "Create Account"}
           </button>
         </form>
 
-        <p style={styles.switchText}>
+        {/* Switch */}
+        <p className="text-center mt-6 text-sm text-gray-600">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-          <span 
-            style={styles.switchLink} 
+          <button
             onClick={() => {
               setIsLogin(!isLogin);
               setError("");
             }}
+            className="text-green-700 font-semibold hover:underline"
           >
             {isLogin ? "Create Account" : "Login"}
-          </span>
+          </button>
         </p>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #008751, #2ecc71)",
-    padding: "20px"
-  },
-  card: {
-    background: "white",
-    padding: "40px 30px",
-    borderRadius: "16px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-  },
-  title: {
-    color: "#008751",
-    textAlign: "center",
-    marginBottom: "8px",
-    fontSize: "28px"
-  },
-  subtitle: {
-    textAlign: "center",
-    color: "#777",
-    marginBottom: "25px",
-    fontSize: "14px"
-  },
-  googleBtn: {
-    width: "100%",
-    padding: "12px",
-    background: "white",
-    border: "1px solid #dadce0",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontWeight: "500",
-    marginBottom: "10px"
-  },
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    margin: "20px 0",
-  },
-  line: {
-    flex: 1,
-    height: "1px",
-    background: "#eee"
-  },
-  input: {
-    width: "100%",
-    padding: "13px 14px",
-    marginBottom: "12px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontSize: "15px",
-    boxSizing: "border-box"
-  },
-  passwordContainer: {
-    position: "relative"
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: "14px",
-    top: "13px",
-    cursor: "pointer",
-    fontSize: "18px",
-    userSelect: "none"
-  },
-  submitBtn: {
-    width: "100%",
-    padding: "14px",
-    background: "#008751",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    marginTop: "8px"
-  },
-  error: {
-    color: "#e74c3c",
-    fontSize: "13px",
-    marginBottom: "10px",
-    textAlign: "center"
-  },
-  switchText: {
-    textAlign: "center",
-    marginTop: "20px",
-    fontSize: "14px",
-    color: "#555"
-  },
-  switchLink: {
-    color: "#008751",
-    fontWeight: "bold",
-    cursor: "pointer"
-  }
-};
 
 export default Auth;

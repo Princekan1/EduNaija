@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, aiModel } from "../firebase";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 function AITutor() {
   const [messages, setMessages] = useState([
@@ -13,6 +14,7 @@ function AITutor() {
   const [userLoading, setUserLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -31,17 +33,17 @@ function AITutor() {
 
     const userMessage = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: "user", text: userMessage }]);
+    setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
     setLoading(true);
 
     try {
       const result = await aiModel.generateContent(userMessage);
       const aiText = result.response.text();
 
-      setMessages(prev => [...prev, { role: "ai", text: aiText }]);
+      setMessages((prev) => [...prev, { role: "ai", text: aiText }]);
     } catch (error) {
       console.error(error);
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         { role: "ai", text: "Sorry, I encountered an error. Please try again." }
       ]);
@@ -58,55 +60,78 @@ function AITutor() {
   };
 
   if (userLoading) {
-    return <div style={{ textAlign: "center", marginTop: "100px" }}>Loading AI Tutor...</div>;
+    return (
+      <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <Sidebar />
+        <main className="flex-1 ml-0 md:ml-64 flex items-center justify-center">
+          <p className={darkMode ? "text-gray-300" : "text-gray-600"}>Loading AI Tutor...</p>
+        </main>
+      </div>
+    );
   }
 
   return (
-    <div style={styles.container}>
+    <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main style={styles.main}>
-        <h1 style={styles.title}>🤖 AI Tutor</h1>
-        <p style={styles.subtitle}>Ask me anything about your studies</p>
+      <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8 flex flex-col h-screen box-border">
+        <h1 className={`text-2xl md:text-3xl font-bold mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+          🤖 AI Tutor
+        </h1>
+        <p className={`mb-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          Ask me anything about your studies
+        </p>
 
-        <div style={styles.chatContainer}>
-          <div style={styles.messages}>
+        <div className={`flex-1 rounded-2xl shadow-sm flex flex-col overflow-hidden min-h-0 ${
+          darkMode ? "bg-gray-800" : "bg-white"
+        }`}>
+          <div className="flex-1 overflow-y-auto p-5 md:p-6 flex flex-col gap-3.5">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                style={{
-                  ...styles.message,
-                  ...(msg.role === "user" ? styles.userMessage : styles.aiMessage)
-                }}
+                className={`max-w-[75%] px-4 py-3 rounded-2xl text-[15px] leading-relaxed whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "self-end bg-green-700 text-white"
+                    : darkMode
+                    ? "self-start bg-gray-700 text-gray-100"
+                    : "self-start bg-gray-100 text-gray-800"
+                }`}
               >
                 {msg.text}
               </div>
             ))}
 
             {loading && (
-              <div style={{ ...styles.message, ...styles.aiMessage }}>
+              <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-[15px] self-start ${
+                darkMode ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600"
+              }`}>
                 Thinking...
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div style={styles.inputArea}>
+          <div className={`p-4 md:p-5 border-t flex gap-3 items-end ${
+            darkMode ? "border-gray-700" : "border-gray-100"
+          }`}>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Ask a question... (e.g. Explain quadratic equations simply)"
-              style={styles.textarea}
               rows={2}
+              className={`flex-1 px-4 py-3 rounded-xl border text-[15px] resize-none font-sans focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent ${
+                darkMode
+                  ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500"
+                  : "bg-white border-gray-300 text-gray-900"
+              }`}
             />
             <button
               onClick={sendMessage}
               disabled={loading || !input.trim()}
-              style={{
-                ...styles.sendBtn,
-                opacity: loading || !input.trim() ? 0.6 : 1
-              }}
+              className={`px-6 py-3 rounded-xl font-semibold text-[15px] bg-green-700 text-white transition ${
+                loading || !input.trim() ? "opacity-60 cursor-not-allowed" : "hover:bg-green-800 cursor-pointer"
+              }`}
             >
               {loading ? "..." : "Send"}
             </button>
@@ -116,90 +141,5 @@ function AITutor() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#f4f7f6",
-  },
-  main: {
-    marginLeft: "260px",
-    flex: 1,
-    padding: "25px 30px",
-    display: "flex",
-    flexDirection: "column",
-    height: "100vh",
-  },
-  title: {
-    margin: "0 0 5px",
-    fontSize: "26px",
-  },
-  subtitle: {
-    color: "#777",
-    marginBottom: "20px",
-  },
-  chatContainer: {
-    flex: 1,
-    background: "white",
-    borderRadius: "14px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-  },
-  messages: {
-    flex: 1,
-    padding: "25px",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-  },
-  message: {
-    maxWidth: "75%",
-    padding: "12px 16px",
-    borderRadius: "12px",
-    lineHeight: "1.5",
-    fontSize: "15px",
-    whiteSpace: "pre-wrap",
-  },
-  userMessage: {
-    alignSelf: "flex-end",
-    background: "#008751",
-    color: "white",
-  },
-  aiMessage: {
-    alignSelf: "flex-start",
-    background: "#f0f0f0",
-    color: "#333",
-  },
-  inputArea: {
-    padding: "15px 20px",
-    borderTop: "1px solid #eee",
-    display: "flex",
-    gap: "12px",
-    alignItems: "flex-end",
-  },
-  textarea: {
-    flex: 1,
-    padding: "12px 14px",
-    borderRadius: "10px",
-    border: "1px solid #ddd",
-    fontSize: "15px",
-    resize: "none",
-    fontFamily: "inherit",
-  },
-  sendBtn: {
-    padding: "12px 22px",
-    background: "#008751",
-    color: "white",
-    border: "none",
-    borderRadius: "10px",
-    fontWeight: "600",
-    cursor: "pointer",
-    fontSize: "15px",
-  },
-};
 
 export default AITutor;
