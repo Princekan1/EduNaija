@@ -90,7 +90,7 @@ function Sidebar() {
       {isMobile && (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-[1100] w-11 h-11 rounded-xl bg-green-700 text-white shadow-lg flex items-center justify-center"
+          className="fixed top-4 left-4 z-1100 w-11 h-11 rounded-xl bg-green-700 text-white shadow-lg flex items-center justify-center"
         >
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -100,14 +100,14 @@ function Sidebar() {
       {isMobile && isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black/50 z-[999]"
+          className="fixed inset-0 bg-black/50 z-999"
         />
       )}
 
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 z-[1000]
+          fixed top-0 left-0 h-screen w-64 z-1000
           flex flex-col
           transition-all duration-300
           border-r
@@ -159,7 +159,7 @@ function Sidebar() {
 
                   ${
                     isActive
-                      ? "bg-gradient-to-r from-green-50 to-emerald-100 text-green-800 font-semibold shadow-sm"
+                      ? "bg-linear-to-r from-green-50 to-emerald-100 text-green-800 font-semibold shadow-sm"
                       : darkMode
                       ? "hover:bg-gray-800 text-gray-300"
                       : "hover:bg-gray-100 text-gray-700"

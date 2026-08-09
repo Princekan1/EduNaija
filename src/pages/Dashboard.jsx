@@ -391,7 +391,7 @@ Do not add any extra text or markdown.
                         `/topics/${subject.id}?class=${encodeURIComponent(getCurriculumKey(user))}`
                       )
                     }
-                    className="rounded-2xl cursor-pointer shadow-md hover:scale-105 hover:shadow-xl transition-all duration-200 aspect-[3/4] overflow-hidden relative"
+                    className="rounded-2xl cursor-pointer shadow-md hover:scale-105 hover:shadow-xl transition-all duration-200 aspect-3/4 overflow-hidden relative"
                     style={cover ? undefined : { background: subject.gradient || subjectStyles[i % subjectStyles.length].gradient }}
                   >
                     {cover ? (

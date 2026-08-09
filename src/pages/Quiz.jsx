@@ -82,7 +82,6 @@ Do not add any extra text, markdown or explanation.
     });
 
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, topicTitle]);
 
   const handleAnswer = (option) => {

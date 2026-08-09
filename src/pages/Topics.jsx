@@ -320,7 +320,7 @@ Rules:
                     <iframe
                       src={topic.video}
                       title={topic.title}
-                      className="w-full h-[340px] border-0"
+                      className="w-full h-85 border-0"
                       allowFullScreen
                     ></iframe>
                   </div>
@@ -334,7 +334,7 @@ Rules:
       {/* Lesson Modal */}
       {showLessonModal && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4 md:p-5"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-1000 p-4 md:p-5"
           onClick={() => setShowLessonModal(false)}
         >
           <div
@@ -479,7 +479,7 @@ Rules:
       {/* Audio Player */}
       {audioUrl && (
         <div
-          className={`fixed bottom-0 left-0 w-full p-4 flex items-center gap-4 border-t-4 border-green-700 shadow-lg z-[1000] ${
+          className={`fixed bottom-0 left-0 w-full p-4 flex items-center gap-4 border-t-4 border-green-700 shadow-lg z-1000 ${
             darkMode ? "bg-gray-800" : "bg-white"
           }`}
         >
