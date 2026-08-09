@@ -61,6 +61,34 @@ import ss3CivicEducation from "../assets/covers/ss3-civic-education.webp";
 import ss3Mathematics from "../assets/covers/ss3-mathematics.webp";
 import ss3EnglishLanguage from "../assets/covers/ss3-english-language.webp";
 
+// JSS 1
+// NOTE: only unambiguous covers are wired in below — any JSS cover with a
+// misspelled "Edtaija" logo, or with more than one competing design, was
+// deliberately left out for now rather than guessed at. Anything missing
+// here just falls back to the gradient tile until a final image is picked.
+import jss1BasicScience from "../assets/covers/jss1-basic-science.webp";
+import jss1Mathematics from "../assets/covers/jss1-mathematics.webp";
+import jss1EnglishLanguage from "../assets/covers/jss1-english-language.webp";
+import jss1ComputerStudies from "../assets/covers/jss1-computer-studies.webp";
+import jss1CulturalAndCreativeArts from "../assets/covers/jss1-cultural-and-creative-arts.webp";
+
+// JSS 2
+import jss2BasicScience from "../assets/covers/jss2-basic-science.webp";
+import jss2EnglishLanguage from "../assets/covers/jss2-english-language.webp";
+import jss2Mathematics from "../assets/covers/jss2-mathematics.webp";
+import jss2ComputerStudies from "../assets/covers/jss2-computer-studies.webp";
+import jss2CulturalAndCreativeArts from "../assets/covers/jss2-cultural-and-creative-arts.webp";
+import jss2PhysicalAndHealthEducation from "../assets/covers/jss2-physical-and-health-education.webp";
+import jss1PhysicalAndHealthEducation from "../assets/covers/jss1-physical-and-health-education.webp";
+
+// JSS 3
+import jss3BasicScience from "../assets/covers/jss3-basic-science.webp";
+import jss3Mathematics from "../assets/covers/jss3-mathematics.webp";
+import jss3EnglishLanguage from "../assets/covers/jss3-english-language.webp";
+import jss3ComputerStudies from "../assets/covers/jss3-computer-studies.webp";
+import jss3CulturalAndCreativeArts from "../assets/covers/jss3-cultural-and-creative-arts.webp";
+import jss3BasicTechnology from "../assets/covers/jss3-basic-technology.webp";
+
 // Keyed by [classLevel][normalized subject slug] so lookups don't depend on
 // the AI producing byte-identical id strings every time it generates subjects.
 const SUBJECT_COVERS = {
@@ -111,6 +139,30 @@ const SUBJECT_COVERS = {
     "civic-education": ss3CivicEducation,
     "mathematics": ss3Mathematics,
     "english-language": ss3EnglishLanguage,
+  },
+  "JSS 1": {
+    "basic-science": jss1BasicScience,
+    "mathematics": jss1Mathematics,
+    "english-language": jss1EnglishLanguage,
+    "computer-studies": jss1ComputerStudies,
+    "cultural-and-creative-arts": jss1CulturalAndCreativeArts,
+    "physical-and-health-education": jss1PhysicalAndHealthEducation,
+  },
+  "JSS 2": {
+    "basic-science": jss2BasicScience,
+    "english-language": jss2EnglishLanguage,
+    "mathematics": jss2Mathematics,
+    "computer-studies": jss2ComputerStudies,
+    "cultural-and-creative-arts": jss2CulturalAndCreativeArts,
+    "physical-and-health-education": jss2PhysicalAndHealthEducation,
+  },
+  "JSS 3": {
+    "basic-science": jss3BasicScience,
+    "mathematics": jss3Mathematics,
+    "english-language": jss3EnglishLanguage,
+    "computer-studies": jss3ComputerStudies,
+    "cultural-and-creative-arts": jss3CulturalAndCreativeArts,
+    "basic-technology": jss3BasicTechnology,
   },
 };
 
@@ -376,11 +428,10 @@ Do not add any extra text or markdown.
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
               {subjects.map((subject, i) => {
-                // Only SS1 students see real cover art — the "SS 1" text is
-                // baked into the image itself, so it would be wrong for any
-                // other class level.
                 // Looks up a cover matching both this subject AND the
-                // student's actual class level — no more single-level gate.
+                // student's actual class level, across all classes with
+                // wired-in cover art — anything without a match falls
+                // back to the gradient tile below.
                 const cover = getCoverFor(subject, user.classLevel);
 
                 return (
