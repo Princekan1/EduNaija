@@ -21,25 +21,6 @@ function Quiz() {
   const [generating, setGenerating] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        navigate("/");
-        return;
-      }
-
-      if (!topicTitle) {
-        setLoading(false);
-        return;
-      }
-
-      generateQuestions(topicTitle);
-    });
-
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, topicTitle]);
-
   const generateQuestions = async (title) => {
     setGenerating(true);
     try {
@@ -84,6 +65,25 @@ Do not add any extra text, markdown or explanation.
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigate("/");
+        return;
+      }
+
+      if (!topicTitle) {
+        setLoading(false);
+        return;
+      }
+
+      generateQuestions(topicTitle);
+    });
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, topicTitle]);
 
   const handleAnswer = (option) => {
     setSelectedAnswer(option);

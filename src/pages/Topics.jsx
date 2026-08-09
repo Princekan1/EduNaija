@@ -22,53 +22,6 @@ function Topics() {
   const [showVideo, setShowVideo] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate("/");
-        return;
-      }
-
-      if (!classLevel) {
-        navigate("/dashboard");
-        return;
-      }
-
-      await loadTopics();
-    });
-
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subjectId, classLevel, navigate]);
-
-  const loadTopics = async () => {
-    try {
-      const subjectSnap = await getDocs(collection(db, "curriculum", classLevel, "subjects"));
-      const subject = subjectSnap.docs.find((d) => d.id === subjectId);
-      if (subject) {
-        setSubjectName(subject.data().name);
-      }
-
-      const topicsRef = collection(db, "curriculum", classLevel, "subjects", subjectId, "topics");
-      const snapshot = await getDocs(topicsRef);
-
-      if (!snapshot.empty) {
-        const loaded = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        loaded.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setTopics(loaded);
-        setLoading(false);
-      } else {
-        await generateTopics();
-      }
-    } catch (error) {
-      console.error("Error loading topics:", error);
-      setLoading(false);
-    }
-  };
-
   const generateTopics = async () => {
     setGenerating(true);
     try {
@@ -121,6 +74,53 @@ Do not add any extra text, markdown or explanation. Only return pure JSON.
       setLoading(false);
     }
   };
+
+  const loadTopics = async () => {
+    try {
+      const subjectSnap = await getDocs(collection(db, "curriculum", classLevel, "subjects"));
+      const subject = subjectSnap.docs.find((d) => d.id === subjectId);
+      if (subject) {
+        setSubjectName(subject.data().name);
+      }
+
+      const topicsRef = collection(db, "curriculum", classLevel, "subjects", subjectId, "topics");
+      const snapshot = await getDocs(topicsRef);
+
+      if (!snapshot.empty) {
+        const loaded = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        loaded.sort((a, b) => (a.order || 0) - (b.order || 0));
+        setTopics(loaded);
+        setLoading(false);
+      } else {
+        await generateTopics();
+      }
+    } catch (error) {
+      console.error("Error loading topics:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        navigate("/");
+        return;
+      }
+
+      if (!classLevel) {
+        navigate("/dashboard");
+        return;
+      }
+
+      await loadTopics();
+    });
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjectId, classLevel, navigate]);
 
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [activeLesson, setActiveLesson] = useState(null); // { title, objectives, keyTerms, sections, checkYourUnderstanding, summary }

@@ -151,64 +151,11 @@ function Dashboard() {
     { icon: "📚", gradient: "linear-gradient(135deg, #d946ef, #ec4899)" },   // fuchsia -> pink
   ];
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        navigate("/");
-        return;
-      }
-
-      try {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser(userData);
-
-          if (!userData.classLevel) {
-            setLoading(false);
-            return;
-          }
-
-          if (userData.classLevel.startsWith("SS") && !userData.department) {
-            setLoading(false);
-            return;
-          }
-
-          await loadSubjects(userData);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
-
   const getCurriculumKey = (userData) => {
     if (userData.classLevel.startsWith("SS")) {
       return `${userData.classLevel}-${userData.department}`;
     }
     return userData.classLevel;
-  };
-
-  const loadSubjects = async (userData) => {
-    try {
-      const key = getCurriculumKey(userData);
-      const subjectsRef = collection(db, "curriculum", key, "subjects");
-      const snapshot = await getDocs(subjectsRef);
-
-      if (!snapshot.empty) {
-        const loaded = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        loaded.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setSubjects(loaded);
-      } else {
-        await generateSubjects(userData);
-      }
-    } catch (error) {
-      console.error("Error loading subjects:", error);
-    }
   };
 
   const generateSubjects = async (userData) => {
@@ -285,6 +232,60 @@ Do not add any extra text or markdown.
       setGenerating(false);
     }
   };
+
+  const loadSubjects = async (userData) => {
+    try {
+      const key = getCurriculumKey(userData);
+      const subjectsRef = collection(db, "curriculum", key, "subjects");
+      const snapshot = await getDocs(subjectsRef);
+
+      if (!snapshot.empty) {
+        const loaded = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        loaded.sort((a, b) => (a.order || 0) - (b.order || 0));
+        setSubjects(loaded);
+      } else {
+        await generateSubjects(userData);
+      }
+    } catch (error) {
+      console.error("Error loading subjects:", error);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        navigate("/");
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser(userData);
+
+          if (!userData.classLevel) {
+            setLoading(false);
+            return;
+          }
+
+          if (userData.classLevel.startsWith("SS") && !userData.department) {
+            setLoading(false);
+            return;
+          }
+
+          await loadSubjects(userData);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   if (loading) {
     return (
