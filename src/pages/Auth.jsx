@@ -5,10 +5,40 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+
+// Maps raw Firebase error codes to user-friendly messages
+const getFriendlyError = (errorCode) => {
+  switch (errorCode) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Incorrect email or password. Please try again.";
+    case "auth/invalid-email":
+      return "That email address doesn't look right.";
+    case "auth/user-disabled":
+      return "This account has been disabled. Contact support.";
+    case "auth/too-many-requests":
+      return "Too many failed attempts. Please wait a moment and try again.";
+    case "auth/network-request-failed":
+      return "Network error. Check your connection and try again.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists.";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in was cancelled. Please try again.";
+    case "auth/popup-blocked":
+      return "Your browser blocked the sign-in popup. Please allow popups and try again.";
+    case "auth/cancelled-popup-request":
+      return ""; // user triggered it twice quickly — no need to show an error
+    default:
+      return "Something went wrong. Please try again.";
+  }
+};
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,33 +56,42 @@ function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const trimmedEmail = email.trim();
+    const trimmedFullName = fullName.trim();
+
+    if (!isLogin && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (!isLogin && password.length < 6) {
+      setError("Password should be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, trimmedEmail, password);
         navigate("/dashboard");
       } else {
-        if (password !== confirmPassword) {
-          setError("Passwords do not match");
-          setLoading(false);
-          return;
-        }
-
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
         const user = userCredential.user;
 
         await setDoc(doc(db, "users", user.uid), {
-          name: fullName,
-          email: email,
+          name: trimmedFullName,
+          email: trimmedEmail,
           xp: 0,
-          createdAt: new Date()
+          createdAt: serverTimestamp()
         });
 
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.message);
+      const message = getFriendlyError(err.code);
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -72,13 +111,14 @@ function Auth() {
           name: user.displayName || "Student",
           email: user.email,
           xp: 0,
-          createdAt: new Date()
+          createdAt: serverTimestamp()
         });
       }
 
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      const message = getFriendlyError(err.code);
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -125,7 +165,8 @@ function Auth() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:bg-gray-100"
             />
           )}
 
@@ -135,7 +176,8 @@ function Auth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+            disabled={loading}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:bg-gray-100"
           />
 
           {/* Password */}
@@ -146,7 +188,9 @@ function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              minLength={6}
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:bg-gray-100"
             />
             <button
             type="button"
@@ -171,12 +215,15 @@ function Auth() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                minLength={6}
+                disabled={loading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:bg-gray-100"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-700 transition-colors"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               >
                 {showConfirmPassword ? (
                   <EyeOff size={20} />
