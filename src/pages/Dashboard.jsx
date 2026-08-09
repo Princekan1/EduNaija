@@ -175,13 +175,36 @@ const getCoverFor = (subject, classLevel) => {
   return covers[normalizeSlug(subject.id)] || covers[normalizeSlug(subject.name)] || null;
 };
 
+// XP -> level: every 100 XP is one level. Purely a display convenience,
+// doesn't touch what's stored in Firestore.
+const XP_PER_LEVEL = 100;
+const getLevelProgress = (xp) => {
+  const safeXp = Math.max(0, xp || 0);
+  const level = Math.floor(safeXp / XP_PER_LEVEL) + 1;
+  const intoLevel = safeXp % XP_PER_LEVEL;
+  return { level, intoLevel, remaining: XP_PER_LEVEL - intoLevel, percent: intoLevel };
+};
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+};
+
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
   const { darkMode } = useTheme();
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // Gradients are applied via inline style (below), not Tailwind classes.
   // These class names used to be built dynamically at runtime (`from-x to-y`),
@@ -398,32 +421,93 @@ Do not add any extra text or markdown.
 
       <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8">
         {/* Header */}
-        <header className={`rounded-2xl p-5 md:p-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm
-          ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-          <div>
-            <h2 className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
-              Welcome back, {user?.name?.split(" ")[0] || "Student"} 👋
-            </h2>
-            <p className={`mt-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-              {user.classLevel}
-              {user.department ? ` • ${user.department}` : ""} • Ready to continue learning?
-            </p>
-          </div>
-          <div className="bg-green-100 text-green-800 px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap">
-            ⭐ {user?.xp || 0} XP
+        <header
+          className={`
+            relative overflow-hidden rounded-2xl mb-8 shadow-sm
+            transition-all duration-500 ease-out
+            ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
+            ${darkMode ? "bg-gray-800" : "bg-white"}
+          `}
+        >
+          {/* Accent bar */}
+          <div className="h-1.5 bg-linear-to-r from-green-600 via-emerald-500 to-green-600" />
+
+          <div className="p-5 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-2xl bg-linear-to-br from-green-600 to-emerald-500 text-white flex items-center justify-center text-xl md:text-2xl font-bold shadow-md">
+                {(user?.name?.trim()?.[0] || "S").toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <h2 className={`text-xl md:text-2xl font-bold truncate ${darkMode ? "text-white" : "text-gray-900"}`}>
+                  {getGreeting()}, {user?.name?.split(" ")[0] || "Student"} 👋
+                </h2>
+                <p className={`mt-1 text-sm md:text-base truncate ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                  {user.classLevel}
+                  {user.department ? ` • ${user.department}` : ""} • Ready to continue learning?
+                </p>
+              </div>
+            </div>
+
+            {/* XP / Level module */}
+            {(() => {
+              const { level, intoLevel, remaining, percent } = getLevelProgress(user?.xp);
+              return (
+                <div
+                  className={`shrink-0 rounded-2xl px-5 py-3.5 w-full sm:w-56 ${
+                    darkMode ? "bg-gray-900/60" : "bg-amber-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`flex items-center gap-1.5 text-sm font-bold ${darkMode ? "text-amber-300" : "text-amber-700"}`}>
+                      ⭐ Level {level}
+                    </span>
+                    <span className={`text-xs font-semibold ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      {user?.xp || 0} XP
+                    </span>
+                  </div>
+                  <div className={`h-2 rounded-full overflow-hidden ${darkMode ? "bg-gray-700" : "bg-amber-100"}`}>
+                    <div
+                      className="h-full rounded-full bg-linear-to-r from-amber-400 to-orange-500 transition-all duration-700 ease-out"
+                      style={{ width: mounted ? `${percent}%` : "0%" }}
+                    />
+                  </div>
+                  <p className={`mt-1.5 text-[11px] ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                    {remaining} XP to level {level + 1}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </header>
 
         {/* Subjects Section */}
-        <section>
-          <h3 className={`text-xl font-semibold mb-5 ${darkMode ? "text-white" : "text-gray-800"}`}>
-            Your Subjects {generating && <span className="text-green-600 text-base font-normal">(Generating with AI...)</span>}
-          </h3>
+        <section
+          className={`transition-all duration-500 ease-out delay-100 ${
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+          }`}
+        >
+          <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+            <h3 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>
+              Your Subjects
+            </h3>
+            {!generating && subjects.length > 0 && (
+              <span className={`text-sm ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                {subjects.length} subject{subjects.length !== 1 ? "s" : ""} • tap one to start learning
+              </span>
+            )}
+          </div>
 
           {generating ? (
-            <div className="text-center py-16 text-green-700 font-medium">
-              AI is generating subjects for {user.classLevel}
-              {user.department ? ` (${user.department})` : ""}... Please wait.
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 rounded-full border-4 border-green-200 border-t-green-600 animate-spin" />
+              <p className={`font-medium text-center ${darkMode ? "text-gray-300" : "text-green-700"}`}>
+                AI is generating subjects for {user.classLevel}
+                {user.department ? ` (${user.department})` : ""}...
+              </p>
+            </div>
+          ) : subjects.length === 0 ? (
+            <div className={`text-center py-16 rounded-2xl ${darkMode ? "bg-gray-800 text-gray-400" : "bg-white text-gray-500"}`}>
+              No subjects loaded yet. Try refreshing the page.
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
@@ -442,26 +526,39 @@ Do not add any extra text or markdown.
                         `/topics/${subject.id}?class=${encodeURIComponent(getCurriculumKey(user))}`
                       )
                     }
-                    className="rounded-2xl cursor-pointer shadow-md hover:scale-105 hover:shadow-xl transition-all duration-200 aspect-3/4 overflow-hidden relative"
-                    style={cover ? undefined : { background: subject.gradient || subjectStyles[i % subjectStyles.length].gradient }}
+                    className={`
+                      group rounded-2xl cursor-pointer shadow-md hover:shadow-xl
+                      hover:-translate-y-1 transition-all duration-200
+                      aspect-3/4 overflow-hidden relative
+                      transition-all duration-500 ease-out
+                      ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
+                    `}
+                    style={{
+                      transitionDelay: mounted ? `${Math.min(i, 10) * 40}ms` : "0ms",
+                      ...(cover ? {} : { background: subject.gradient || subjectStyles[i % subjectStyles.length].gradient }),
+                    }}
                   >
+                    {subject.compulsory && (
+                      <div className="absolute top-2.5 left-2.5 z-10 bg-white/90 text-green-800 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full shadow-sm">
+                        Compulsory
+                      </div>
+                    )}
+
                     {cover ? (
-                      <img
-                        src={cover}
-                        alt={`${subject.name} textbook cover`}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={cover}
+                          alt={`${subject.name} textbook cover`}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                      </>
                     ) : (
                       <div className="w-full h-full text-white flex flex-col items-center justify-center p-4">
                         <div className="text-4xl mb-3">{subject.icon}</div>
                         <div className="font-semibold text-center text-sm leading-tight">
                           {subject.name}
                         </div>
-                        {subject.compulsory && (
-                          <div className="text-[11px] mt-2 bg-white/20 px-2 py-0.5 rounded-full">
-                            Compulsory
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
