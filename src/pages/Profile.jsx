@@ -97,7 +97,7 @@ function Profile() {
     <div style={styles.container}>
       <Sidebar />
 
-      <main style={styles.main}>
+      <main style={styles.main} className="md:ml-64 pt-20 md:pt-6">
         <h1 style={styles.title}>👤 My Profile</h1>
         <p style={styles.subtitle}>Manage your account information</p>
 
@@ -189,7 +189,6 @@ const styles = {
     background: "#f4f7f6",
   },
   main: {
-    marginLeft: "260px",
     flex: 1,
     padding: "25px 30px",
   },

@@ -151,7 +151,7 @@ function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-700 to-emerald-500 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-700 to-emerald-500 p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8">
         {/* Header */}
         <div className="text-center mb-6">
