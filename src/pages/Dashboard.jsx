@@ -5,6 +5,23 @@ import { auth, db, aiModel } from "../firebase";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import {
+  Hand,
+  Star,
+  ChevronDown,
+  Calculator,
+  BookOpen,
+  Dna,
+  Zap,
+  FlaskConical,
+  Flag,
+  Globe2,
+  Palette,
+  Laptop,
+  BarChart3,
+  Landmark,
+  BookMarked,
+} from "lucide-react";
 
 // Book-cover art. Custom-generated for EduNaija specifically (own branding,
 // "FOR NIGERIAN SCHOOLS" seal) — not scanned/copied publisher covers. Each
@@ -192,12 +209,32 @@ const getGreeting = () => {
   return "Good evening";
 };
 
+// Subject icons are stored as plain string keys (never as component
+// references) because subjectStyles gets copied into subjectData and
+// saved straight to Firestore via setDoc — a React component isn't
+// serializable, so only the lookup key travels with the saved subject.
+const SUBJECT_ICONS = {
+  calculator: Calculator,
+  "book-open": BookOpen,
+  dna: Dna,
+  zap: Zap,
+  flask: FlaskConical,
+  flag: Flag,
+  globe: Globe2,
+  palette: Palette,
+  laptop: Laptop,
+  "bar-chart": BarChart3,
+  landmark: Landmark,
+  "book-marked": BookMarked,
+};
+
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [xpExpanded, setXpExpanded] = useState(false);
   const navigate = useNavigate();
   const { darkMode } = useTheme();
 
@@ -212,18 +249,18 @@ function Dashboard() {
   // CSS for classes assembled that way — which is why cards were rendering
   // with no visible background at all. Inline gradients always work.
   const subjectStyles = [
-    { icon: "📐", gradient: "linear-gradient(135deg, #6366f1, #9333ea)" },   // indigo -> purple
-    { icon: "📖", gradient: "linear-gradient(135deg, #ec4899, #f43f5e)" },   // pink -> rose
-    { icon: "🧬", gradient: "linear-gradient(135deg, #34d399, #06b6d4)" },   // emerald -> cyan
-    { icon: "⚡", gradient: "linear-gradient(135deg, #60a5fa, #22d3ee)" },   // blue -> cyan
-    { icon: "🧪", gradient: "linear-gradient(135deg, #4ade80, #2dd4bf)" },   // green -> teal
-    { icon: "🇳🇬", gradient: "linear-gradient(135deg, #f87171, #f472b6)" },  // red -> pink
-    { icon: "🌍", gradient: "linear-gradient(135deg, #c084fc, #f9a8d4)" },   // purple -> pink
-    { icon: "🎨", gradient: "linear-gradient(135deg, #fdba74, #f9a8d4)" },   // orange -> pink
-    { icon: "💻", gradient: "linear-gradient(135deg, #22d3ee, #3b82f6)" },   // cyan -> blue
-    { icon: "📊", gradient: "linear-gradient(135deg, #facc15, #fb923c)" },   // yellow -> orange
-    { icon: "🏛️", gradient: "linear-gradient(135deg, #86efac, #fde047)" },  // green -> yellow
-    { icon: "📚", gradient: "linear-gradient(135deg, #d946ef, #ec4899)" },   // fuchsia -> pink
+    { icon: "calculator", gradient: "linear-gradient(135deg, #6366f1, #9333ea)" },   // indigo -> purple
+    { icon: "book-open", gradient: "linear-gradient(135deg, #ec4899, #f43f5e)" },    // pink -> rose
+    { icon: "dna", gradient: "linear-gradient(135deg, #34d399, #06b6d4)" },          // emerald -> cyan
+    { icon: "zap", gradient: "linear-gradient(135deg, #60a5fa, #22d3ee)" },          // blue -> cyan
+    { icon: "flask", gradient: "linear-gradient(135deg, #4ade80, #2dd4bf)" },        // green -> teal
+    { icon: "flag", gradient: "linear-gradient(135deg, #f87171, #f472b6)" },         // red -> pink
+    { icon: "globe", gradient: "linear-gradient(135deg, #c084fc, #f9a8d4)" },        // purple -> pink
+    { icon: "palette", gradient: "linear-gradient(135deg, #fdba74, #f9a8d4)" },      // orange -> pink
+    { icon: "laptop", gradient: "linear-gradient(135deg, #22d3ee, #3b82f6)" },       // cyan -> blue
+    { icon: "bar-chart", gradient: "linear-gradient(135deg, #facc15, #fb923c)" },    // yellow -> orange
+    { icon: "landmark", gradient: "linear-gradient(135deg, #86efac, #fde047)" },     // green -> yellow
+    { icon: "book-marked", gradient: "linear-gradient(135deg, #d946ef, #ec4899)" },  // fuchsia -> pink
   ];
 
   const getCurriculumKey = (userData) => {
@@ -432,14 +469,31 @@ Do not add any extra text or markdown.
           {/* Accent bar */}
           <div className="h-1.5 bg-linear-to-r from-green-600 via-emerald-500 to-green-600" />
 
+          <style>{`
+            @keyframes edunaija-wave {
+              0%, 100% { transform: rotate(0deg); }
+              15% { transform: rotate(-12deg); }
+              30% { transform: rotate(10deg); }
+              45% { transform: rotate(-8deg); }
+              60% { transform: rotate(6deg); }
+              75% { transform: rotate(0deg); }
+            }
+            .edunaija-wave-icon {
+              display: inline-block;
+              transform-origin: 70% 70%;
+              animation: edunaija-wave 1.6s ease-in-out 0.4s 1;
+            }
+          `}</style>
+
           <div className="p-5 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="flex items-center gap-4 min-w-0">
               <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-2xl bg-linear-to-br from-green-600 to-emerald-500 text-white flex items-center justify-center text-xl md:text-2xl font-bold shadow-md">
                 {(user?.name?.trim()?.[0] || "S").toUpperCase()}
               </div>
               <div className="min-w-0">
-                <h2 className={`text-xl md:text-2xl font-bold truncate ${darkMode ? "text-white" : "text-gray-900"}`}>
-                  {getGreeting()}, {user?.name?.split(" ")[0] || "Student"} 👋
+                <h2 className={`flex items-center gap-2 text-xl md:text-2xl font-bold truncate ${darkMode ? "text-white" : "text-gray-900"}`}>
+                  <span className="truncate">{getGreeting()}, {user?.name?.split(" ")[0] || "Student"}</span>
+                  <Hand size={22} className="edunaija-wave-icon text-amber-500 shrink-0" strokeWidth={2.25} />
                 </h2>
                 <p className={`mt-1 text-sm md:text-base truncate ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                   {user.classLevel}
@@ -448,21 +502,29 @@ Do not add any extra text or markdown.
               </div>
             </div>
 
-            {/* XP / Level module */}
+            {/* XP / Level module — tap to expand */}
             {(() => {
               const { level, intoLevel, remaining, percent } = getLevelProgress(user?.xp);
               return (
-                <div
-                  className={`shrink-0 rounded-2xl px-5 py-3.5 w-full sm:w-56 ${
-                    darkMode ? "bg-gray-900/60" : "bg-amber-50"
+                <button
+                  type="button"
+                  onClick={() => setXpExpanded((v) => !v)}
+                  aria-expanded={xpExpanded}
+                  className={`shrink-0 rounded-2xl px-5 py-3.5 w-full sm:w-56 text-left transition-colors ${
+                    darkMode ? "bg-gray-900/60 hover:bg-gray-900/80" : "bg-amber-50 hover:bg-amber-100"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`flex items-center gap-1.5 text-sm font-bold ${darkMode ? "text-amber-300" : "text-amber-700"}`}>
-                      ⭐ Level {level}
+                      <Star size={15} className="fill-current" strokeWidth={0} />
+                      Level {level}
                     </span>
-                    <span className={`text-xs font-semibold ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                    <span className={`flex items-center gap-1 text-xs font-semibold ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                       {user?.xp || 0} XP
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${xpExpanded ? "rotate-180" : ""}`}
+                      />
                     </span>
                   </div>
                   <div className={`h-2 rounded-full overflow-hidden ${darkMode ? "bg-gray-700" : "bg-amber-100"}`}>
@@ -471,10 +533,19 @@ Do not add any extra text or markdown.
                       style={{ width: mounted ? `${percent}%` : "0%" }}
                     />
                   </div>
-                  <p className={`mt-1.5 text-[11px] ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
-                    {remaining} XP to level {level + 1}
-                  </p>
-                </div>
+
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      xpExpanded ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0 mt-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <p className={`text-[11px] leading-snug ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                        {intoLevel} / {XP_PER_LEVEL} XP into level {level} • {remaining} XP to level {level + 1}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               );
             })()}
           </div>
@@ -555,7 +626,13 @@ Do not add any extra text or markdown.
                       </>
                     ) : (
                       <div className="w-full h-full text-white flex flex-col items-center justify-center p-4">
-                        <div className="text-4xl mb-3">{subject.icon}</div>
+                        {(() => {
+                          // Falls back to BookOpen for any subject saved
+                          // before this change, since older records may
+                          // still hold an emoji string instead of a key.
+                          const SubjectIcon = SUBJECT_ICONS[subject.icon] || BookOpen;
+                          return <SubjectIcon size={36} strokeWidth={1.75} className="mb-3" />;
+                        })()}
                         <div className="font-semibold text-center text-sm leading-tight">
                           {subject.name}
                         </div>
