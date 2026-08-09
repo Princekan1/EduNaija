@@ -3,7 +3,8 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
@@ -18,6 +19,7 @@ const getFriendlyError = (errorCode) => {
     case "auth/user-not-found":
       return "Incorrect email or password. Please try again.";
     case "auth/invalid-email":
+    case "auth/missing-email":
       return "That email address doesn't look right.";
     case "auth/user-disabled":
       return "This account has been disabled. Contact support.";
@@ -50,12 +52,14 @@ function Auth() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setResetSent(false);
 
     const trimmedEmail = email.trim();
     const trimmedFullName = fullName.trim();
@@ -89,6 +93,28 @@ function Auth() {
 
         navigate("/dashboard");
       }
+    } catch (err) {
+      const message = getFriendlyError(err.code);
+      if (message) setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setError("");
+    setResetSent(false);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError("Enter your email address above first, then tap 'Forgot Password?'");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, trimmedEmail);
+      setResetSent(true);
     } catch (err) {
       const message = getFriendlyError(err.code);
       if (message) setError(message);
@@ -206,6 +232,19 @@ function Auth() {
             </button>
           </div>
 
+          {isLogin && (
+            <div className="text-right -mt-2">
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={loading}
+                className="text-sm text-green-700 font-medium hover:underline disabled:opacity-60"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+
           {/* Confirm Password */}
           {!isLogin && (
             <div className="relative">
@@ -238,6 +277,12 @@ function Auth() {
             <p className="text-red-500 text-sm text-center">{error}</p>
           )}
 
+          {resetSent && (
+            <p className="text-green-700 text-sm text-center">
+              Password reset email sent — check your inbox.
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -254,6 +299,7 @@ function Auth() {
             onClick={() => {
               setIsLogin(!isLogin);
               setError("");
+              setResetSent(false);
             }}
             className="text-green-700 font-semibold hover:underline"
           >
