@@ -64,6 +64,11 @@ function Auth() {
     const trimmedEmail = email.trim();
     const trimmedFullName = fullName.trim();
 
+    if (!isLogin && !trimmedFullName) {
+      setError("Please enter your full name.");
+      return;
+    }
+
     if (!isLogin && password !== confirmPassword) {
       setError("Passwords do not match");
       return;
