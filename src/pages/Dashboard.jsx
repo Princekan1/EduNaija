@@ -157,6 +157,8 @@ const SUBJECT_COVERS = {
     "computer-studies": ss1ComputerStudies,
     "further-mathematics": ss1FurtherMathematics,
     "civic-education": ss1CivicEducation,
+    "national-values-education": ss1CivicEducation,
+    "national-values": ss1CivicEducation,
     "geography": ss1Geography,
     "technical-drawing": ss1TechnicalDrawing,
     "economics": ss1Economics,
@@ -194,6 +196,8 @@ const SUBJECT_COVERS = {
     "geography": ss2Geography,
     "agricultural-science": ss2AgriculturalScience,
     "civic-education": ss2CivicEducation,
+    "national-values-education": ss2CivicEducation,
+    "national-values": ss2CivicEducation,
     "visual-art": ss2VisualArt,
     "visual-arts": ss2VisualArt,
     "government": ss2Government,
@@ -207,6 +211,8 @@ const SUBJECT_COVERS = {
     "physics": ss3Physics,
     "history": ss3History,
     "civic-education": ss3CivicEducation,
+    "national-values-education": ss3CivicEducation,
+    "national-values": ss3CivicEducation,
     "mathematics": ss3Mathematics,
     "english-language": ss3EnglishLanguage,
     "geography": ss3Geography,
@@ -244,6 +250,8 @@ const SUBJECT_COVERS = {
     "social-studies": jss1SocialStudies,
     "french-language": jss1FrenchLanguage,
     "civic-education": jss1CivicEducation,
+    "national-values-education": jss1CivicEducation,
+    "national-values": jss1CivicEducation,
     "islamic-religious-studies": jss1IslamicReligiousStudies,
     "christian-religious-studies": jss1ChristianReligiousStudies,
     "business-studies": jss1BusinessStudies,
@@ -266,6 +274,8 @@ const SUBJECT_COVERS = {
     "social-studies": jss2SocialStudies,
     "french-language": jss2FrenchLanguage,
     "civic-education": jss2CivicEducation,
+    "national-values-education": jss2CivicEducation,
+    "national-values": jss2CivicEducation,
   },
   "JSS 3": {
     "basic-science": jss3BasicScience,
@@ -277,6 +287,8 @@ const SUBJECT_COVERS = {
     "basic-science-and-technology": jss3BasicTechnology,
     "basic-science-technology": jss3BasicTechnology,
     "civic-education": jss3CivicEducation,
+    "national-values-education": jss3CivicEducation,
+    "national-values": jss3CivicEducation,
     "social-studies": jss3SocialStudies,
     "business-studies": jss3BusinessStudies,
     "nigerian-languages": jss3NigerianLanguages,
@@ -296,7 +308,29 @@ const normalizeSlug = (str) =>
 const getCoverFor = (subject, classLevel) => {
   const covers = SUBJECT_COVERS[classLevel];
   if (!covers) return null;
-  return covers[normalizeSlug(subject.id)] || covers[normalizeSlug(subject.name)] || null;
+
+  const slug = normalizeSlug(subject.id);
+  const nameSlug = normalizeSlug(subject.name);
+
+  // Direct match
+  if (covers[slug]) return covers[slug];
+  if (covers[nameSlug]) return covers[nameSlug];
+
+  // Aliases for common Nigerian curriculum name variations
+  const aliases = {
+    "national-values-education": "civic-education",
+    "national-values": "civic-education",
+    "civic": "civic-education",
+    "pre-vocational-studies": "prevocational-studies",
+    "basic-science-and-technology": "basic-technology",
+    "basic-science-technology": "basic-technology",
+    "nigerian-languages": "nigerian-language",
+  };
+
+  const aliasSlug = aliases[slug] || aliases[nameSlug];
+  if (aliasSlug && covers[aliasSlug]) return covers[aliasSlug];
+
+  return null;
 };
 
 const XP_PER_LEVEL = 100;
