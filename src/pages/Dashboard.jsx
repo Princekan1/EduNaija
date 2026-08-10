@@ -478,7 +478,7 @@ Do not add any extra text or markdown.
     <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8">
+      <main className="flex-1 ml-0 md:ml-64 pt-20 md:pt-8 px-5 md:px-8 pb-8">
         {/* Header */}
         <header
           className={`

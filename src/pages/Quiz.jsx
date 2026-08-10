@@ -134,7 +134,7 @@ Do not add any extra text, markdown or explanation.
     return (
       <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
         <Sidebar />
-        <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8">
+        <main className="flex-1 ml-0 md:ml-64 pt-20 md:pt-8 px-5 md:px-8 pb-8">
           <h2 className={`text-xl font-bold mb-4 ${darkMode ? "text-white" : "text-gray-900"}`}>
             No quiz selected
           </h2>
@@ -155,7 +155,7 @@ Do not add any extra text, markdown or explanation.
     <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 p-5 md:p-8">
+      <main className="flex-1 ml-0 md:ml-64 pt-20 md:pt-8 px-5 md:px-8 pb-8">
         <button
           onClick={() => navigate(-1)}
           className={`text-sm font-medium mb-4 hover:underline ${darkMode ? "text-green-400" : "text-green-700"}`}
