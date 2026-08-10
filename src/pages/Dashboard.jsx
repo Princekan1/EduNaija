@@ -67,9 +67,20 @@ import ss2Chemistry from "../assets/covers/ss2-chemistry.webp";
 import ss2FineArt from "../assets/covers/ss2-fine-art.webp";
 import ss2YorubaLanguage from "../assets/covers/ss2-yoruba-language.webp";
 import ss2ChristianReligiousStudies from "../assets/covers/ss2-christian-religious-studies.webp";
+import ss2Commerce from "../assets/covers/ss2-commerce.webp";
+import ss2LiteratureInEnglish from "../assets/covers/ss2-literature-in-english.webp";
+import ss2FinancialAccounting from "../assets/covers/ss2-financial-accounting.webp";
+import ss2Geography from "../assets/covers/ss2-geography.webp";
 
 // SS 3
 import ss3LiteratureInEnglish from "../assets/covers/ss3-literature-in-english.webp";
+import ss3Geography from "../assets/covers/ss3-geography.webp";
+import ss3Commerce from "../assets/covers/ss3-commerce.webp";
+import ss3FinancialAccounting from "../assets/covers/ss3-financial-accounting.webp";
+import ss3ChristianReligiousStudies from "../assets/covers/ss3-christian-religious-studies.webp";
+import ss3TechnicalDrawing from "../assets/covers/ss3-technical-drawing.webp";
+import ss3DataProcessing from "../assets/covers/ss3-data-processing.webp";
+import ss3Government from "../assets/covers/ss3-government.webp";
 import ss3Biology from "../assets/covers/ss3-biology.webp";
 import ss3Chemistry from "../assets/covers/ss3-chemistry.webp";
 import ss3Physics from "../assets/covers/ss3-physics.webp";
@@ -146,6 +157,10 @@ const SUBJECT_COVERS = {
     "fine-art": ss2FineArt,
     "yoruba-language": ss2YorubaLanguage,
     "christian-religious-studies": ss2ChristianReligiousStudies,
+    "commerce": ss2Commerce,
+    "literature-in-english": ss2LiteratureInEnglish,
+    "financial-accounting": ss2FinancialAccounting,
+    "geography": ss2Geography,
   },
   "SS 3": {
     "literature-in-english": ss3LiteratureInEnglish,
@@ -156,6 +171,13 @@ const SUBJECT_COVERS = {
     "civic-education": ss3CivicEducation,
     "mathematics": ss3Mathematics,
     "english-language": ss3EnglishLanguage,
+    "geography": ss3Geography,
+    "commerce": ss3Commerce,
+    "financial-accounting": ss3FinancialAccounting,
+    "christian-religious-studies": ss3ChristianReligiousStudies,
+    "technical-drawing": ss3TechnicalDrawing,
+    "data-processing": ss3DataProcessing,
+    "government": ss3Government,
   },
   "JSS 1": {
     "basic-science": jss1BasicScience,
