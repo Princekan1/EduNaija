@@ -71,6 +71,9 @@ import ss2Commerce from "../assets/covers/ss2-commerce.webp";
 import ss2LiteratureInEnglish from "../assets/covers/ss2-literature-in-english.webp";
 import ss2FinancialAccounting from "../assets/covers/ss2-financial-accounting.webp";
 import ss2Geography from "../assets/covers/ss2-geography.webp";
+import ss2AgriculturalScience from "../assets/covers/ss2-agricultural-science.webp";
+import ss2CivicEducation from "../assets/covers/ss2-civic-education.webp";
+import ss2VisualArt from "../assets/covers/ss2-visual-art.webp";
 
 // SS 3
 import ss3LiteratureInEnglish from "../assets/covers/ss3-literature-in-english.webp";
@@ -81,6 +84,10 @@ import ss3ChristianReligiousStudies from "../assets/covers/ss3-christian-religio
 import ss3TechnicalDrawing from "../assets/covers/ss3-technical-drawing.webp";
 import ss3DataProcessing from "../assets/covers/ss3-data-processing.webp";
 import ss3Government from "../assets/covers/ss3-government.webp";
+import ss3Economics from "../assets/covers/ss3-economics.webp";
+import ss3Marketing from "../assets/covers/ss3-marketing.webp";
+import ss3FurtherMathematics from "../assets/covers/ss3-further-mathematics.webp";
+import ss3VisualArts from "../assets/covers/ss3-visual-arts.webp";
 import ss3Biology from "../assets/covers/ss3-biology.webp";
 import ss3Chemistry from "../assets/covers/ss3-chemistry.webp";
 import ss3Physics from "../assets/covers/ss3-physics.webp";
@@ -138,6 +145,7 @@ const SUBJECT_COVERS = {
     "financial-accounting": ss1FinancialAccounting,
     "commerce": ss1Commerce,
     "data-processing": ss1DataProcessing,
+    "computer-science": ss1DataProcessing,
     "yoruba-language": ss1YorubaLanguage,
     "fine-art": ss1FineArt,
     "christian-religious-studies": ss1ChristianReligiousStudies,
@@ -153,6 +161,8 @@ const SUBJECT_COVERS = {
     "biology": ss2Biology,
     "further-mathematics": ss2FurtherMathematics,
     "data-processing": ss2DataProcessing,
+    "computer-studies": ss2DataProcessing,
+    "computer-science": ss2DataProcessing,
     "chemistry": ss2Chemistry,
     "fine-art": ss2FineArt,
     "yoruba-language": ss2YorubaLanguage,
@@ -161,6 +171,10 @@ const SUBJECT_COVERS = {
     "literature-in-english": ss2LiteratureInEnglish,
     "financial-accounting": ss2FinancialAccounting,
     "geography": ss2Geography,
+    "agricultural-science": ss2AgriculturalScience,
+    "civic-education": ss2CivicEducation,
+    "visual-art": ss2VisualArt,
+    "visual-arts": ss2VisualArt,
   },
   "SS 3": {
     "literature-in-english": ss3LiteratureInEnglish,
@@ -177,7 +191,15 @@ const SUBJECT_COVERS = {
     "christian-religious-studies": ss3ChristianReligiousStudies,
     "technical-drawing": ss3TechnicalDrawing,
     "data-processing": ss3DataProcessing,
+    "computer-studies": ss3DataProcessing,
+    "computer-science": ss3DataProcessing,
     "government": ss3Government,
+    "economics": ss3Economics,
+    "marketing": ss3Marketing,
+    "further-mathematics": ss3FurtherMathematics,
+    "visual-art": ss3VisualArts,
+    "visual-arts": ss3VisualArts,
+    "fine-art": ss3VisualArts,
   },
   "JSS 1": {
     "basic-science": jss1BasicScience,
