@@ -52,6 +52,7 @@ import ss1YorubaLanguage from "../assets/covers/ss1-yoruba-language.webp";
 import ss1FineArt from "../assets/covers/ss1-fine-art.webp";
 import ss1ChristianReligiousStudies from "../assets/covers/ss1-christian-religious-studies.webp";
 import ss1LiteratureInEnglish from "../assets/covers/ss1-literature-in-english.webp";
+import ss1AnimalHusbandry from "../assets/covers/ss1-animal-husbandry.webp";
 
 // SS 2
 import ss2History from "../assets/covers/ss2-history.webp";
@@ -76,6 +77,7 @@ import ss2CivicEducation from "../assets/covers/ss2-civic-education.webp";
 import ss2VisualArt from "../assets/covers/ss2-visual-art.webp";
 import ss2Government from "../assets/covers/ss2-government.webp";
 import ss2OfficePractice from "../assets/covers/ss2-office-practice.webp";
+import ss2AnimalHusbandry from "../assets/covers/ss2-animal-husbandry.webp";
 
 // SS 3
 import ss3LiteratureInEnglish from "../assets/covers/ss3-literature-in-english.webp";
@@ -98,6 +100,7 @@ import ss3CivicEducation from "../assets/covers/ss3-civic-education.webp";
 import ss3Mathematics from "../assets/covers/ss3-mathematics.webp";
 import ss3EnglishLanguage from "../assets/covers/ss3-english-language.webp";
 import ss3AgriculturalScience from "../assets/covers/ss3-agricultural-science.webp";
+import ss3AnimalHusbandry from "../assets/covers/ss3-animal-husbandry.webp";
 
 // JSS 1
 // NOTE: only unambiguous covers are wired in below — any JSS cover with a
@@ -118,6 +121,12 @@ import jss2ComputerStudies from "../assets/covers/jss2-computer-studies.webp";
 import jss2CulturalAndCreativeArts from "../assets/covers/jss2-cultural-and-creative-arts.webp";
 import jss2PhysicalAndHealthEducation from "../assets/covers/jss2-physical-and-health-education.webp";
 import jss1PhysicalAndHealthEducation from "../assets/covers/jss1-physical-and-health-education.webp";
+import jss2NigerianLanguage from "../assets/covers/jss2-nigerian-language.webp";
+import jss2PrevocationalStudies from "../assets/covers/jss2-prevocational-studies.webp";
+import jss2BasicTechnology from "../assets/covers/jss2-basic-technology.webp";
+import jss2AgriculturalScience from "../assets/covers/jss2-agricultural-science.webp";
+import jss2SocialStudies from "../assets/covers/jss2-social-studies.webp";
+import jss2FrenchLanguage from "../assets/covers/jss2-french-language.webp";
 
 // JSS 3
 import jss3BasicScience from "../assets/covers/jss3-basic-science.webp";
@@ -134,6 +143,7 @@ import jss3FrenchLanguage from "../assets/covers/jss3-french-language.webp";
 import jss3IslamicReligiousStudies from "../assets/covers/jss3-islamic-religious-studies.webp";
 import jss3ChristianReligiousStudies from "../assets/covers/jss3-christian-religious-studies.webp";
 import jss3PrevocationalStudies from "../assets/covers/jss3-prevocational-studies.webp";
+import jss3AgriculturalScience from "../assets/covers/jss3-agricultural-science.webp";
 
 // Keyed by [classLevel][normalized subject slug] so lookups don't depend on
 // the AI producing byte-identical id strings every time it generates subjects.
@@ -161,6 +171,7 @@ const SUBJECT_COVERS = {
     "fine-art": ss1FineArt,
     "christian-religious-studies": ss1ChristianReligiousStudies,
     "literature-in-english": ss1LiteratureInEnglish,
+    "animal-husbandry": ss1AnimalHusbandry,
   },
   "SS 2": {
     "history": ss2History,
@@ -188,6 +199,7 @@ const SUBJECT_COVERS = {
     "visual-arts": ss2VisualArt,
     "government": ss2Government,
     "office-practice": ss2OfficePractice,
+    "animal-husbandry": ss2AnimalHusbandry,
   },
   "SS 3": {
     "literature-in-english": ss3LiteratureInEnglish,
@@ -214,6 +226,7 @@ const SUBJECT_COVERS = {
     "visual-arts": ss3VisualArts,
     "fine-art": ss3VisualArts,
     "agricultural-science": ss3AgriculturalScience,
+    "animal-husbandry": ss3AnimalHusbandry,
   },
   "JSS 1": {
     "basic-science": jss1BasicScience,
@@ -230,6 +243,16 @@ const SUBJECT_COVERS = {
     "computer-studies": jss2ComputerStudies,
     "cultural-and-creative-arts": jss2CulturalAndCreativeArts,
     "physical-and-health-education": jss2PhysicalAndHealthEducation,
+    "nigerian-language": jss2NigerianLanguage,
+    "nigerian-languages": jss2NigerianLanguage,
+    "prevocational-studies": jss2PrevocationalStudies,
+    "pre-vocational-studies": jss2PrevocationalStudies,
+    "basic-technology": jss2BasicTechnology,
+    "basic-science-and-technology": jss2BasicTechnology,
+    "basic-science-technology": jss2BasicTechnology,
+    "agricultural-science": jss2AgriculturalScience,
+    "social-studies": jss2SocialStudies,
+    "french-language": jss2FrenchLanguage,
   },
   "JSS 3": {
     "basic-science": jss3BasicScience,
@@ -238,14 +261,19 @@ const SUBJECT_COVERS = {
     "computer-studies": jss3ComputerStudies,
     "cultural-and-creative-arts": jss3CulturalAndCreativeArts,
     "basic-technology": jss3BasicTechnology,
+    "basic-science-and-technology": jss3BasicTechnology,
+    "basic-science-technology": jss3BasicTechnology,
     "civic-education": jss3CivicEducation,
     "social-studies": jss3SocialStudies,
     "business-studies": jss3BusinessStudies,
     "nigerian-languages": jss3NigerianLanguages,
+    "nigerian-language": jss3NigerianLanguages,
     "french-language": jss3FrenchLanguage,
     "islamic-religious-studies": jss3IslamicReligiousStudies,
     "christian-religious-studies": jss3ChristianReligiousStudies,
     "prevocational-studies": jss3PrevocationalStudies,
+    "pre-vocational-studies": jss3PrevocationalStudies,
+    "agricultural-science": jss3AgriculturalScience,
   },
 };
 
