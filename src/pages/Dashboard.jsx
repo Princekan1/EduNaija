@@ -478,7 +478,7 @@ Do not add any extra text or markdown.
     <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 pt-20 md:pt-8 px-5 md:px-8 pb-8">
+      <main className="flex-1 min-w-0 ml-0 md:ml-64 pt-20 md:pt-8 px-5 md:px-8 pb-8">
         {/* Header */}
         <header
           className={`
@@ -603,7 +603,7 @@ Do not add any extra text or markdown.
               No subjects loaded yet. Try refreshing the page.
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 min-w-0">
               {subjects.map((subject, i) => {
                 // Looks up a cover matching both this subject AND the
                 // student's actual class level, across all classes with
@@ -624,6 +624,7 @@ Do not add any extra text or markdown.
                       hover:-translate-y-1 transition-all duration-200
                       h-48 sm:h-56 md:h-64 lg:h-72 overflow-hidden relative
                       transition-all duration-500 ease-out
+                      min-w-0
                       border ${darkMode ? "border-gray-700 hover:border-gray-600" : "border-transparent"}
                       ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
                     `}
