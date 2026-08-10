@@ -23,13 +23,6 @@ import {
   BookMarked,
 } from "lucide-react";
 
-// Book-cover art. Custom-generated for EduNaija specifically (own branding,
-// "FOR NIGERIAN SCHOOLS" seal) — not scanned/copied publisher covers. Each
-// cover has its class level (SS 1 / SS 2 / SS 3) baked into the artwork, so
-// covers are looked up by (classLevel, subject) together — a cover only
-// ever renders for the exact class level it was made for. Anything without
-// a matching cover falls back to the gradient tile design further down.
-
 // SS 1
 import ss1Mathematics from "../assets/covers/mathematics.webp";
 import ss1Biology from "../assets/covers/biology.webp";
@@ -103,15 +96,22 @@ import ss3AgriculturalScience from "../assets/covers/ss3-agricultural-science.we
 import ss3AnimalHusbandry from "../assets/covers/ss3-animal-husbandry.webp";
 
 // JSS 1
-// NOTE: only unambiguous covers are wired in below — any JSS cover with a
-// misspelled "Edtaija" logo, or with more than one competing design, was
-// deliberately left out for now rather than guessed at. Anything missing
-// here just falls back to the gradient tile until a final image is picked.
 import jss1BasicScience from "../assets/covers/jss1-basic-science.webp";
 import jss1Mathematics from "../assets/covers/jss1-mathematics.webp";
 import jss1EnglishLanguage from "../assets/covers/jss1-english-language.webp";
 import jss1ComputerStudies from "../assets/covers/jss1-computer-studies.webp";
 import jss1CulturalAndCreativeArts from "../assets/covers/jss1-cultural-and-creative-arts.webp";
+import jss1PhysicalAndHealthEducation from "../assets/covers/jss1-physical-and-health-education.webp";
+import jss1PrevocationalStudies from "../assets/covers/jss1-prevocational-studies.webp";
+import jss1BasicTechnology from "../assets/covers/jss1-basic-technology.webp";
+import jss1AgriculturalScience from "../assets/covers/jss1-agricultural-science.webp";
+import jss1NigerianLanguage from "../assets/covers/jss1-nigerian-language.webp";
+import jss1SocialStudies from "../assets/covers/jss1-social-studies.webp";
+import jss1FrenchLanguage from "../assets/covers/jss1-french-language.webp";
+import jss1CivicEducation from "../assets/covers/jss1-civic-education.webp";
+import jss1IslamicReligiousStudies from "../assets/covers/jss1-islamic-religious-studies.webp";
+import jss1ChristianReligiousStudies from "../assets/covers/jss1-christian-religious-studies.webp";
+import jss1BusinessStudies from "../assets/covers/jss1-business-studies.webp";
 
 // JSS 2
 import jss2BasicScience from "../assets/covers/jss2-basic-science.webp";
@@ -120,13 +120,13 @@ import jss2Mathematics from "../assets/covers/jss2-mathematics.webp";
 import jss2ComputerStudies from "../assets/covers/jss2-computer-studies.webp";
 import jss2CulturalAndCreativeArts from "../assets/covers/jss2-cultural-and-creative-arts.webp";
 import jss2PhysicalAndHealthEducation from "../assets/covers/jss2-physical-and-health-education.webp";
-import jss1PhysicalAndHealthEducation from "../assets/covers/jss1-physical-and-health-education.webp";
 import jss2NigerianLanguage from "../assets/covers/jss2-nigerian-language.webp";
 import jss2PrevocationalStudies from "../assets/covers/jss2-prevocational-studies.webp";
 import jss2BasicTechnology from "../assets/covers/jss2-basic-technology.webp";
 import jss2AgriculturalScience from "../assets/covers/jss2-agricultural-science.webp";
 import jss2SocialStudies from "../assets/covers/jss2-social-studies.webp";
 import jss2FrenchLanguage from "../assets/covers/jss2-french-language.webp";
+import jss2CivicEducation from "../assets/covers/jss2-civic-education.webp";
 
 // JSS 3
 import jss3BasicScience from "../assets/covers/jss3-basic-science.webp";
@@ -145,8 +145,7 @@ import jss3ChristianReligiousStudies from "../assets/covers/jss3-christian-relig
 import jss3PrevocationalStudies from "../assets/covers/jss3-prevocational-studies.webp";
 import jss3AgriculturalScience from "../assets/covers/jss3-agricultural-science.webp";
 
-// Keyed by [classLevel][normalized subject slug] so lookups don't depend on
-// the AI producing byte-identical id strings every time it generates subjects.
+// Keyed by [classLevel][normalized subject slug]
 const SUBJECT_COVERS = {
   "SS 1": {
     "mathematics": ss1Mathematics,
@@ -235,6 +234,19 @@ const SUBJECT_COVERS = {
     "computer-studies": jss1ComputerStudies,
     "cultural-and-creative-arts": jss1CulturalAndCreativeArts,
     "physical-and-health-education": jss1PhysicalAndHealthEducation,
+    "prevocational-studies": jss1PrevocationalStudies,
+    "pre-vocational-studies": jss1PrevocationalStudies,
+    "basic-technology": jss1BasicTechnology,
+    "basic-science-and-technology": jss1BasicTechnology,
+    "agricultural-science": jss1AgriculturalScience,
+    "nigerian-language": jss1NigerianLanguage,
+    "nigerian-languages": jss1NigerianLanguage,
+    "social-studies": jss1SocialStudies,
+    "french-language": jss1FrenchLanguage,
+    "civic-education": jss1CivicEducation,
+    "islamic-religious-studies": jss1IslamicReligiousStudies,
+    "christian-religious-studies": jss1ChristianReligiousStudies,
+    "business-studies": jss1BusinessStudies,
   },
   "JSS 2": {
     "basic-science": jss2BasicScience,
@@ -253,6 +265,7 @@ const SUBJECT_COVERS = {
     "agricultural-science": jss2AgriculturalScience,
     "social-studies": jss2SocialStudies,
     "french-language": jss2FrenchLanguage,
+    "civic-education": jss2CivicEducation,
   },
   "JSS 3": {
     "basic-science": jss3BasicScience,
@@ -286,8 +299,6 @@ const getCoverFor = (subject, classLevel) => {
   return covers[normalizeSlug(subject.id)] || covers[normalizeSlug(subject.name)] || null;
 };
 
-// XP -> level: every 100 XP is one level. Purely a display convenience,
-// doesn't touch what's stored in Firestore.
 const XP_PER_LEVEL = 100;
 const getLevelProgress = (xp) => {
   const safeXp = Math.max(0, xp || 0);
@@ -303,10 +314,6 @@ const getGreeting = () => {
   return "Good evening";
 };
 
-// Subject icons are stored as plain string keys (never as component
-// references) because subjectStyles gets copied into subjectData and
-// saved straight to Firestore via setDoc — a React component isn't
-// serializable, so only the lookup key travels with the saved subject.
 const SUBJECT_ICONS = {
   calculator: Calculator,
   "book-open": BookOpen,
@@ -337,24 +344,19 @@ function Dashboard() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Gradients are applied via inline style (below), not Tailwind classes.
-  // These class names used to be built dynamically at runtime (`from-x to-y`),
-  // and Tailwind's build-time scanner can't reliably detect and generate
-  // CSS for classes assembled that way — which is why cards were rendering
-  // with no visible background at all. Inline gradients always work.
   const subjectStyles = [
-    { icon: "calculator", gradient: "linear-gradient(135deg, #6366f1, #9333ea)" },   // indigo -> purple
-    { icon: "book-open", gradient: "linear-gradient(135deg, #ec4899, #f43f5e)" },    // pink -> rose
-    { icon: "dna", gradient: "linear-gradient(135deg, #34d399, #06b6d4)" },          // emerald -> cyan
-    { icon: "zap", gradient: "linear-gradient(135deg, #60a5fa, #22d3ee)" },          // blue -> cyan
-    { icon: "flask", gradient: "linear-gradient(135deg, #4ade80, #2dd4bf)" },        // green -> teal
-    { icon: "flag", gradient: "linear-gradient(135deg, #f87171, #f472b6)" },         // red -> pink
-    { icon: "globe", gradient: "linear-gradient(135deg, #c084fc, #f9a8d4)" },        // purple -> pink
-    { icon: "palette", gradient: "linear-gradient(135deg, #fdba74, #f9a8d4)" },      // orange -> pink
-    { icon: "laptop", gradient: "linear-gradient(135deg, #22d3ee, #3b82f6)" },       // cyan -> blue
-    { icon: "bar-chart", gradient: "linear-gradient(135deg, #facc15, #fb923c)" },    // yellow -> orange
-    { icon: "landmark", gradient: "linear-gradient(135deg, #86efac, #fde047)" },     // green -> yellow
-    { icon: "book-marked", gradient: "linear-gradient(135deg, #d946ef, #ec4899)" },  // fuchsia -> pink
+    { icon: "calculator", gradient: "linear-gradient(135deg, #6366f1, #9333ea)" },
+    { icon: "book-open", gradient: "linear-gradient(135deg, #ec4899, #f43f5e)" },
+    { icon: "dna", gradient: "linear-gradient(135deg, #34d399, #06b6d4)" },
+    { icon: "zap", gradient: "linear-gradient(135deg, #60a5fa, #22d3ee)" },
+    { icon: "flask", gradient: "linear-gradient(135deg, #4ade80, #2dd4bf)" },
+    { icon: "flag", gradient: "linear-gradient(135deg, #f87171, #f472b6)" },
+    { icon: "globe", gradient: "linear-gradient(135deg, #c084fc, #f9a8d4)" },
+    { icon: "palette", gradient: "linear-gradient(135deg, #fdba74, #f9a8d4)" },
+    { icon: "laptop", gradient: "linear-gradient(135deg, #22d3ee, #3b82f6)" },
+    { icon: "bar-chart", gradient: "linear-gradient(135deg, #facc15, #fb923c)" },
+    { icon: "landmark", gradient: "linear-gradient(135deg, #86efac, #fde047)" },
+    { icon: "book-marked", gradient: "linear-gradient(135deg, #d946ef, #ec4899)" },
   ];
 
   const getCurriculumKey = (userData) => {
@@ -560,7 +562,6 @@ Do not add any extra text or markdown.
             ${darkMode ? "bg-gray-800" : "bg-white"}
           `}
         >
-          {/* Accent bar */}
           <div className="h-1.5 bg-linear-to-r from-green-600 via-emerald-500 to-green-600" />
 
           <style>{`
@@ -596,7 +597,6 @@ Do not add any extra text or markdown.
               </div>
             </div>
 
-            {/* XP / Level module — tap to expand */}
             {(() => {
               const { level, intoLevel, remaining, percent } = getLevelProgress(user?.xp);
               return (
@@ -677,10 +677,6 @@ Do not add any extra text or markdown.
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 min-w-0">
               {subjects.map((subject, i) => {
-                // Looks up a cover matching both this subject AND the
-                // student's actual class level, across all classes with
-                // wired-in cover art — anything without a match falls
-                // back to the gradient tile below.
                 const cover = getCoverFor(subject, user.classLevel);
 
                 return (
@@ -723,9 +719,6 @@ Do not add any extra text or markdown.
                     ) : (
                       <div className="w-full h-full text-white flex flex-col items-center justify-center p-4">
                         {(() => {
-                          // Falls back to BookOpen for any subject saved
-                          // before this change, since older records may
-                          // still hold an emoji string instead of a key.
                           const SubjectIcon = SUBJECT_ICONS[subject.icon] || BookOpen;
                           return <SubjectIcon size={36} strokeWidth={1.75} className="mb-3" />;
                         })()}
