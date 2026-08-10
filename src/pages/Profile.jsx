@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -14,6 +15,7 @@ function Profile() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
 
   const classOptions = [
     "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5", "Primary 6",
@@ -90,39 +92,58 @@ function Profile() {
   };
 
   if (loading) {
-    return <div style={{ textAlign: "center", marginTop: "100px" }}>Loading profile...</div>;
+    return (
+      <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <Sidebar />
+        <main className="flex-1 ml-0 md:ml-64 flex items-center justify-center">
+          <p className={darkMode ? "text-gray-300" : "text-gray-600"}>Loading profile...</p>
+        </main>
+      </div>
+    );
   }
 
+  const inputClasses = `w-full px-4 py-3 rounded-xl border text-[15px] focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent ${
+    darkMode
+      ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500"
+      : "bg-white border-gray-300 text-gray-900"
+  }`;
+
+  const labelClasses = `block font-semibold mb-2 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`;
+
   return (
-    <div style={styles.container}>
+    <div className={`flex min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
       <Sidebar />
 
-      <main style={styles.main} className="md:ml-64 pt-20 md:pt-6">
-        <h1 style={styles.title}>👤 My Profile</h1>
-        <p style={styles.subtitle}>Manage your account information</p>
+      <main className="flex-1 md:ml-64 pt-20 md:pt-8 px-5 md:px-8 pb-8">
+        <h1 className={`text-2xl md:text-3xl font-bold mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+          👤 My Profile
+        </h1>
+        <p className={`mb-6 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          Manage your account information
+        </p>
 
-        <div style={styles.card}>
-          <div style={styles.infoRow}>
-            <span style={styles.label}>Email</span>
-            <span>{user?.email}</span>
+        <div className={`rounded-2xl shadow-sm p-6 md:p-8 max-w-lg ${darkMode ? "bg-gray-800" : "bg-white"}`}>
+          <div className={`flex justify-between py-3 text-[15px] border-b ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
+            <span className={`font-semibold text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>Email</span>
+            <span className={darkMode ? "text-gray-200" : "text-gray-900"}>{user?.email}</span>
           </div>
 
-          <div style={styles.infoRow}>
-            <span style={styles.label}>XP</span>
-            <span style={{ color: "#008751", fontWeight: "bold" }}>{user?.xp || 0} XP</span>
+          <div className={`flex justify-between py-3 text-[15px] border-b ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
+            <span className={`font-semibold text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>XP</span>
+            <span className={`font-bold ${darkMode ? "text-green-400" : "text-green-700"}`}>{user?.xp || 0} XP</span>
           </div>
 
-          <form onSubmit={handleSave} style={{ marginTop: "25px" }}>
-            <label style={styles.label}>Full Name</label>
+          <form onSubmit={handleSave} className="mt-6">
+            <label className={labelClasses}>Full Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={styles.input}
+              className={inputClasses}
               required
             />
 
-            <label style={{ ...styles.label, marginTop: "18px" }}>Class Level</label>
+            <label className={`${labelClasses} mt-4`}>Class Level</label>
             <select
               value={classLevel}
               onChange={(e) => {
@@ -131,7 +152,7 @@ function Profile() {
                   setDepartment("");
                 }
               }}
-              style={styles.input}
+              className={inputClasses}
               required
             >
               <option value="">Select your class</option>
@@ -143,11 +164,11 @@ function Profile() {
             {/* Department only shows for SS1 - SS3 */}
             {isSeniorSecondary && (
               <>
-                <label style={{ ...styles.label, marginTop: "18px" }}>Department</label>
+                <label className={`${labelClasses} mt-4`}>Department</label>
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  style={styles.input}
+                  className={inputClasses}
                   required
                 >
                   <option value="">Select Department</option>
@@ -159,19 +180,19 @@ function Profile() {
             )}
 
             {message && (
-              <p style={{
-                color: message.includes("success") ? "#008751" : "#e74c3c",
-                marginTop: "10px",
-                fontSize: "14px"
-              }}>
+              <p className={`mt-3 text-sm ${
+                message.includes("success")
+                  ? darkMode ? "text-green-400" : "text-green-700"
+                  : darkMode ? "text-red-400" : "text-red-500"
+              }`}>
                 {message}
               </p>
             )}
 
             <button
               type="submit"
-              style={styles.saveBtn}
               disabled={saving}
+              className="mt-5 px-6 py-3.5 rounded-xl font-semibold text-[15px] bg-green-700 text-white hover:bg-green-800 transition disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
@@ -181,64 +202,5 @@ function Profile() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#f4f7f6",
-  },
-  main: {
-    flex: 1,
-    padding: "25px 30px",
-  },
-  title: {
-    margin: "0 0 6px",
-    fontSize: "26px",
-  },
-  subtitle: {
-    color: "#777",
-    marginBottom: "25px",
-  },
-  card: {
-    background: "white",
-    padding: "30px",
-    borderRadius: "14px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.06)",
-    maxWidth: "500px",
-  },
-  infoRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "12px 0",
-    borderBottom: "1px solid #f0f0f0",
-    fontSize: "15px",
-  },
-  label: {
-    display: "block",
-    fontWeight: "600",
-    marginBottom: "8px",
-    color: "#555",
-  },
-  input: {
-    width: "100%",
-    padding: "12px 14px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontSize: "15px",
-    boxSizing: "border-box",
-  },
-  saveBtn: {
-    marginTop: "20px",
-    padding: "13px 24px",
-    background: "#008751",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer",
-  },
-};
 
 export default Profile;

@@ -622,8 +622,9 @@ Do not add any extra text or markdown.
                     className={`
                       group rounded-2xl cursor-pointer shadow-md hover:shadow-xl
                       hover:-translate-y-1 transition-all duration-200
-                      aspect-3/4 overflow-hidden relative
+                      h-48 sm:h-56 md:h-64 lg:h-72 overflow-hidden relative
                       transition-all duration-500 ease-out
+                      border ${darkMode ? "border-gray-700 hover:border-gray-600" : "border-transparent"}
                       ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
                     `}
                     style={{
