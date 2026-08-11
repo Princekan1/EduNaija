@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs, setDoc, doc } from "firebase/firestore";
-import { auth, db, aiModel } from "../firebase";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { auth, db, aiModel, imageModel, storage } from "../firebase";
 import Sidebar from "../components/Layout/Sidebar";
 import { useTheme } from "../context/ThemeContext";
 
@@ -138,12 +139,60 @@ Do not add any extra text, markdown or explanation. Only return pure JSON.
     return "Write for a student preparing for WAEC/NECO/JAMB. Use precise, exam-appropriate technical language, but still explain new terms clearly rather than assuming prior mastery. Examples can be more abstract or exam-style where appropriate.";
   };
 
+  // Generates (or reuses a cached) illustration for a topic.
+  // Follows the same "generate once, cache forever" pattern as the lesson
+  // text itself — the URL is stored on the topic doc so this never calls
+  // the AI twice for the same topic.
+  const generateIllustration = async (topic) => {
+    if (topic.illustrationUrl) {
+      return topic.illustrationUrl;
+    }
+
+    try {
+      const prompt = `
+A simple, clear educational illustration for a ${classLevel} student in Nigeria,
+explaining the topic "${topic.title}" from the subject "${subjectName || subjectId}".
+Style: clean textbook diagram, labeled where helpful, no clutter, no watermarks or text overlays besides labels.
+`;
+
+      const result = await imageModel.generateContent(prompt);
+
+      const imagePart = result.response.candidates[0].content.parts.find(
+        (p) => p.inlineData
+      );
+      if (!imagePart) throw new Error("No image returned");
+
+      const base64Data = imagePart.inlineData.data;
+      const mimeType = imagePart.inlineData.mimeType || "image/png";
+
+      const imageRef = ref(
+        storage,
+        `illustrations/${classLevel}/${subjectId}/${topic.id}.png`
+      );
+      await uploadString(imageRef, base64Data, "base64", { contentType: mimeType });
+      const downloadUrl = await getDownloadURL(imageRef);
+
+      // Cache the URL on the topic doc, merged so we don't touch the lesson field.
+      await setDoc(
+        doc(db, "curriculum", classLevel, "subjects", subjectId, "topics", topic.id),
+        { illustrationUrl: downloadUrl },
+        { merge: true }
+      );
+
+      return downloadUrl;
+    } catch (error) {
+      console.error("Illustration generation error:", error);
+      return null; // fail gracefully — lesson still works without an image
+    }
+  };
+
   const openLesson = async (topic) => {
     setLessonError("");
 
     // Already generated and cached — just show it, no AI call needed.
     if (topic.lesson) {
-      setActiveLesson({ title: topic.title, ...topic.lesson });
+      const illustrationUrl = topic.illustrationUrl || (await generateIllustration(topic));
+      setActiveLesson({ title: topic.title, illustrationUrl, ...topic.lesson });
       setShowLessonModal(true);
       return;
     }
@@ -192,7 +241,17 @@ Rules:
       );
 
       setTopics((prev) => prev.map((t) => (t.id === topic.id ? { ...t, lesson } : t)));
-      setActiveLesson({ title: topic.title, ...lesson });
+
+      // Show the lesson text immediately; the illustration follows once ready
+      // rather than blocking the whole lesson on image generation.
+      setActiveLesson({ title: topic.title, illustrationUrl: null, ...lesson });
+      const illustrationUrl = await generateIllustration(topic);
+      if (illustrationUrl) {
+        setTopics((prev) =>
+          prev.map((t) => (t.id === topic.id ? { ...t, illustrationUrl } : t))
+        );
+        setActiveLesson((prev) => (prev ? { ...prev, illustrationUrl } : prev));
+      }
     } catch (error) {
       console.error("Lesson generation error:", error);
       setLessonError(
@@ -378,6 +437,22 @@ Rules:
                   <h2 className={`text-2xl font-bold mb-5 ${darkMode ? "text-white" : "text-gray-900"}`}>
                     {activeLesson.title}
                   </h2>
+
+                  {/* Illustration — shows once generated; lesson text above still
+                      renders immediately, so this never blocks reading. */}
+                  {activeLesson.illustrationUrl ? (
+                    <img
+                      src={activeLesson.illustrationUrl}
+                      alt={`Illustration for ${activeLesson.title}`}
+                      className="w-full rounded-xl mb-5 object-cover max-h-64"
+                    />
+                  ) : (
+                    <div className={`w-full h-40 rounded-xl mb-5 flex items-center justify-center text-sm ${
+                      darkMode ? "bg-gray-900 text-gray-500" : "bg-gray-50 text-gray-400"
+                    }`}>
+                      Illustration loading…
+                    </div>
+                  )}
 
                   {/* Objectives */}
                   {activeLesson.objectives?.length > 0 && (

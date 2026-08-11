@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // --- illustrations/{classKey}/{subjectId}/{topicId}.png ---
+    // Topics.jsx generates these client-side via the AI image model the
+    // first time a topic's lesson is opened, mirroring how curriculum/**
+    // content is generated in Firestore. Same reasoning applies: it's
+    // shared, non-sensitive content, so any signed-in user can read and
+    // write it. Signed-out users get nothing.
+    match /illustrations/{classKey}/{subjectId}/{topicId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024 // 5MB cap per image
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Deny everything else by default (no blanket fallback rule).
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

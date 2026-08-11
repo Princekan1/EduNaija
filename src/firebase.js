@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
+import { getStorage } from "firebase/storage";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 
 const firebaseConfig = {
@@ -17,7 +18,16 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
+export const storage = getStorage(app);
 
-// AI Model (Gemini)
+// AI Model (Gemini) - text generation: subjects, topics, lessons, quiz questions
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 export const aiModel = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+
+// AI Model (Gemini) - image generation: topic illustrations
+// Separate model instance because image generation needs a different
+// generationConfig (responseModalities) than the text model above.
+export const imageModel = getGenerativeModel(ai, {
+  model: "gemini-3.1-flash-image",
+  generationConfig: { responseModalities: ["IMAGE"] },
+});
