@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../../firebase";
+import { supabase } from "../../lib/supabaseClient";
 import { useTheme } from "../../context/ThemeContext";
 
 import {
@@ -77,7 +76,7 @@ function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       navigate("/");
     } catch (error) {
       console.error(error);
