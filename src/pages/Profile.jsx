@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { onAuthStateChanged, updateProfile } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -26,26 +24,33 @@ function Profile() {
   const isSeniorSecondary = classLevel.startsWith("SS");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
+    const loadProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate("/");
         return;
       }
 
       try {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setUser({ ...data, email: currentUser.email, uid: currentUser.uid });
-          setName(data.name || "");
-          setClassLevel(data.classLevel || "");
-          setDepartment(data.department || "");
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (profile) {
+          setUser({ ...profile, email: session.user.email, uid: session.user.id });
+          setName(profile.name || "");
+          setClassLevel(profile.classLevel || "");
+          setDepartment(profile.department || "");
         } else {
           setUser({
-            name: currentUser.displayName || "Student",
-            email: currentUser.email,
+            name: session.user.user_metadata?.full_name || "Student",
+            email: session.user.email,
             xp: 0,
-            uid: currentUser.uid
+            uid: session.user.id
           });
         }
       } catch (error) {
@@ -53,9 +58,9 @@ function Profile() {
       } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    loadProfile();
   }, [navigate]);
 
   const handleSave = async (e) => {
@@ -70,16 +75,21 @@ function Profile() {
     setMessage("");
 
     try {
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        name: name.trim(),
-        classLevel,
-        department: isSeniorSecondary ? department : null
-      });
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          name: name.trim(),
+          classLevel,
+          department: isSeniorSecondary ? department : null
+        })
+        .eq("id", user.uid);
 
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { displayName: name.trim() });
-      }
+      if (updateError) throw updateError;
+
+      const { error: authUpdateError } = await supabase.auth.updateUser({
+        data: { full_name: name.trim() }
+      });
+      if (authUpdateError) throw authUpdateError;
 
       setUser({ ...user, name: name.trim(), classLevel, department });
       setMessage("Profile updated successfully!");

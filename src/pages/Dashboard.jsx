@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, getDocs, setDoc } from "firebase/firestore";
-import { auth, db, aiModel } from "../firebase";
+import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -442,8 +440,13 @@ Do not add any extra text or markdown.
 `;
       }
 
-      const result = await aiModel.generateContent(prompt);
-      let text = result.response.text().trim();
+      const res = await fetch("/api/generateContent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const { text: rawText } = await res.json();
+      let text = rawText.trim();
       text = text.replace(/```json/g, "").replace(/```/g, "").trim();
       const generated = JSON.parse(text);
 
@@ -454,16 +457,17 @@ Do not add any extra text or markdown.
         const style = subjectStyles[i % subjectStyles.length];
 
         const subjectData = {
+          curriculum_key: key,
+          subject_id: subject.id,
           name: subject.name,
-          id: subject.id,
           icon: style.icon,
           gradient: style.gradient,
           order: i + 1,
-          compulsory: subject.compulsory || false
+          compulsory: subject.compulsory || false,
         };
 
-        await setDoc(doc(db, "curriculum", key, "subjects", subject.id), subjectData);
-        subjectsWithStyle.push(subjectData);
+        await supabase.from("curriculum_subjects").upsert(subjectData);
+        subjectsWithStyle.push({ ...subjectData, id: subject.id });
       }
 
       setSubjects(subjectsWithStyle);
@@ -478,12 +482,16 @@ Do not add any extra text or markdown.
   const loadSubjects = async (userData) => {
     try {
       const key = getCurriculumKey(userData);
-      const subjectsRef = collection(db, "curriculum", key, "subjects");
-      const snapshot = await getDocs(subjectsRef);
+      const { data, error } = await supabase
+        .from("curriculum_subjects")
+        .select("*")
+        .eq("curriculum_key", key)
+        .order("order", { ascending: true });
 
-      if (!snapshot.empty) {
-        const loaded = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        loaded.sort((a, b) => (a.order || 0) - (b.order || 0));
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const loaded = data.map((d) => ({ ...d, id: d.subject_id }));
         setSubjects(loaded);
       } else {
         await generateSubjects(userData);
@@ -494,38 +502,45 @@ Do not add any extra text or markdown.
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
+    const loadUserAndSubjects = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate("/");
         return;
       }
 
       try {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser(userData);
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .maybeSingle();
 
-          if (!userData.classLevel) {
+        if (error) throw error;
+
+        if (profile) {
+          setUser(profile);
+
+          if (!profile.classLevel) {
             setLoading(false);
             return;
           }
 
-          if (userData.classLevel.startsWith("SS") && !userData.department) {
+          if (profile.classLevel.startsWith("SS") && !profile.department) {
             setLoading(false);
             return;
           }
 
-          await loadSubjects(userData);
+          await loadSubjects(profile);
         }
       } catch (error) {
         console.error(error);
       } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    loadUserAndSubjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 

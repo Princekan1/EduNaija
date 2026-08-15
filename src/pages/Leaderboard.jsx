@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -13,28 +11,30 @@ function Leaderboard() {
   const { darkMode } = useTheme();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+    const loadLeaderboard = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate("/");
         return;
       }
 
       try {
-        const q = query(
-          collection(db, "users"),
-          orderBy("xp", "desc"),
-          limit(20)
-        );
-        const snapshot = await getDocs(q);
+        const { data, error } = await supabase
+          .from("leaderboard")
+          .select("name, xp")
+          .order("xp", { ascending: false })
+          .limit(20);
 
-        const data = snapshot.docs.map((doc, index) => ({
-          id: doc.id,
+        if (error) throw error;
+
+        const ranked = data.map((student, index) => ({
+          id: index,
           rank: index + 1,
-          name: doc.data().name || "Anonymous",
-          xp: doc.data().xp || 0,
+          name: student.name || "Anonymous",
+          xp: student.xp || 0,
         }));
 
-        setLeaders(data);
+        setLeaders(ranked);
       } catch (error) {
         console.error("Error loading leaderboard:", error);
         setLeaders([
@@ -46,9 +46,9 @@ function Leaderboard() {
       } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    loadLeaderboard();
   }, [navigate]);
 
   if (loading) {
@@ -85,7 +85,7 @@ function Leaderboard() {
             <div>
               {leaders.map((student, i) => (
                 <div
-                  key={student.id || student.rank}
+                  key={student.id ?? student.rank}
                   className={`flex items-center px-5 md:px-6 py-4 ${
                     i !== leaders.length - 1 ? (darkMode ? "border-b border-gray-700" : "border-b border-gray-100") : ""
                   } ${student.rank <= 3 ? (darkMode ? "bg-gray-700/40" : "bg-green-50/60") : ""}`}

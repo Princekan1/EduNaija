@@ -1,45 +1,20 @@
-import { useState } from "react";
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendPasswordResetEmail
-} from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
-// Maps raw Firebase error codes to user-friendly messages
-const getFriendlyError = (errorCode) => {
-  switch (errorCode) {
-    case "auth/invalid-credential":
-    case "auth/wrong-password":
-    case "auth/user-not-found":
-      return "Incorrect email or password. Please try again.";
-    case "auth/invalid-email":
-    case "auth/missing-email":
-      return "That email address doesn't look right.";
-    case "auth/user-disabled":
-      return "This account has been disabled. Contact support.";
-    case "auth/too-many-requests":
-      return "Too many failed attempts. Please wait a moment and try again.";
-    case "auth/network-request-failed":
-      return "Network error. Check your connection and try again.";
-    case "auth/email-already-in-use":
-      return "An account with this email already exists.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
-    case "auth/popup-closed-by-user":
-      return "Sign-in was cancelled. Please try again.";
-    case "auth/popup-blocked":
-      return "Your browser blocked the sign-in popup. Please allow popups and try again.";
-    case "auth/cancelled-popup-request":
-      return ""; // user triggered it twice quickly — no need to show an error
-    default:
-      return "Something went wrong. Please try again.";
-  }
+// Maps Supabase auth error messages to user-friendly text.
+// Supabase doesn't use Firebase-style error codes — it returns a message string.
+const getFriendlyError = (message = "") => {
+  const m = message.toLowerCase();
+  if (m.includes("invalid login credentials")) return "Incorrect email or password. Please try again.";
+  if (m.includes("email not confirmed")) return "Please confirm your email before logging in. Check your inbox.";
+  if (m.includes("user already registered")) return "An account with this email already exists.";
+  if (m.includes("password should be at least")) return "Password should be at least 6 characters.";
+  if (m.includes("unable to validate email")) return "That email address doesn't look right.";
+  if (m.includes("email rate limit")) return "Too many attempts. Please wait a moment and try again.";
+  if (m.includes("network")) return "Network error. Check your connection and try again.";
+  return "Something went wrong. Please try again.";
 };
 
 function Auth() {
@@ -55,6 +30,19 @@ function Auth() {
   const [resetSent, setResetSent] = useState(false);
 
   const navigate = useNavigate();
+
+  // Catches the redirect back from Google OAuth (and any existing session)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate("/dashboard");
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) navigate("/dashboard");
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,23 +71,25 @@ function Auth() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, trimmedEmail, password);
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+        if (signInError) throw signInError;
         navigate("/dashboard");
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
-        const user = userCredential.user;
-
-        await setDoc(doc(db, "users", user.uid), {
-          name: trimmedFullName,
+        const { error: signUpError } = await supabase.auth.signUp({
           email: trimmedEmail,
-          xp: 0,
-          createdAt: serverTimestamp()
+          password,
+          options: { data: { full_name: trimmedFullName } },
         });
+        if (signUpError) throw signUpError;
+        // Profile row is created automatically by a database trigger on auth.users.
 
         navigate("/dashboard");
       }
     } catch (err) {
-      const message = getFriendlyError(err.code);
+      const message = getFriendlyError(err.message);
       if (message) setError(message);
     } finally {
       setLoading(false);
@@ -118,39 +108,34 @@ function Auth() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, trimmedEmail);
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (resetError) throw resetError;
       setResetSent(true);
     } catch (err) {
-      const message = getFriendlyError(err.code);
+      const message = getFriendlyError(err.message);
       if (message) setError(message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Redirects the whole page to Google, then back to /dashboard.
+  // The useEffect above (onAuthStateChange) handles navigation after the redirect.
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, "users", user.uid), {
-          name: user.displayName || "Student",
-          email: user.email,
-          xp: 0,
-          createdAt: serverTimestamp()
-        });
-      }
-
-      navigate("/dashboard");
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (oauthError) throw oauthError;
+      // No further code runs here — the browser navigates away to Google.
     } catch (err) {
-      const message = getFriendlyError(err.code);
+      const message = getFriendlyError(err.message);
       if (message) setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -172,9 +157,9 @@ function Auth() {
           disabled={loading}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl py-3 font-medium hover:bg-gray-50 transition disabled:opacity-60"
         >
-          <img 
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-            alt="Google" 
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt="Google"
             className="w-5 h-5"
           />
           Continue with Google

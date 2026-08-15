@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Layout/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -11,7 +10,7 @@ function Library() {
   const navigate = useNavigate();
   const { darkMode } = useTheme();
 
-  // Temporary library data (we can connect to Firebase later)
+  // Temporary library data (we can connect to Supabase later)
   const libraryItems = [
     {
       id: 1,
@@ -62,11 +61,12 @@ function Library() {
     : libraryItems.filter((item) => item.type === filter);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) navigate("/");
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) navigate("/");
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, [navigate]);
 
   if (loading) {
