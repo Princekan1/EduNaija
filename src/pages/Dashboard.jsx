@@ -323,6 +323,9 @@ const getCoverFor = (subject, classLevel) => {
     "basic-science-and-technology": "basic-technology",
     "basic-science-technology": "basic-technology",
     "nigerian-languages": "nigerian-language",
+    "fine-arts": "fine-art",
+    "yoruba": "yoruba-language",
+    "yoruba-studies": "yoruba-language",
   };
 
   const aliasSlug = aliases[slug] || aliases[nameSlug];
